@@ -8,6 +8,9 @@ services:
     volumes:
       - .:/app
       - /app/.venv
+    environment:
+      - HOST=0.0.0.0
+      - PORT=6969
     ports:
       - 6969:6969
 
