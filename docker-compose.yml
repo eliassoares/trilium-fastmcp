@@ -1,0 +1,24 @@
+services:
+  trilium-fastmcp:
+    container_name: trilium-fastmcp
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: trilium-fastmcp
+    volumes:
+      - .:/app
+      - /app/.venv
+    ports:
+      - 6969:6969
+
+  mcp-inspector:
+    image: ghcr.io/modelcontextprotocol/inspector:0.21.1
+    ports:
+      - 6274:6274
+      - 6277:6277
+    environment:
+      - MCP_AUTO_OPEN_ENABLED=false
+      - HOST=0.0.0.0
+      - CLIENT_PORT=6274
+      - SERVER_PORT=6277
+      - ALLOWED_ORIGINS=http://localhost:6274,http://0.0.0.0:6274,http://127.0.0.1:6274

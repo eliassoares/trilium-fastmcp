@@ -1,4 +1,4 @@
-.PHONY: install lint fix format typecheck security audit check run clean
+.PHONY: install lint fix format typecheck security audit check run build clean
 
 install: ## Install dependencies and pre-commit hooks
 	uv sync
@@ -24,8 +24,11 @@ audit: ## Run dependency vulnerability check
 
 check: lint typecheck security audit ## Run all checks
 
-run: ## Run the MCP server
-	uv run python main.py
+build: ## Build Docker image
+	docker compose build
+
+run: ## Run the MCP server via docker-compose
+	docker compose up
 
 clean: ## Remove build artifacts and caches
 	find . -type d -name __pycache__ -exec rm -rf {} +
