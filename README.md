@@ -72,26 +72,41 @@ This project exposes Trilium's [ETAPI](https://docs.triliumnotes.org/user-guide/
 git clone https://github.com/<your-username>/trilium-fastmcp.git
 cd trilium-fastmcp
 
-# Create virtual environment and install dependencies
-uv sync
-
-# Install pre-commit hooks
-uv run pre-commit install
+# Install dependencies and pre-commit hooks
+make install
 ```
 
 ## Configuration
 
 The server requires a Trilium ETAPI token. You can obtain one from **Trilium → Options → ETAPI**.
 
+Set the following environment variables (or create a `.env` file):
+
+| Variable | Default | Description |
+|---|---|---|
+| `TRILIUM_URL` | — | Base URL of your Trilium instance |
+| `TRILIUM_TOKEN` | — | ETAPI authentication token |
+| `HOST` | `127.0.0.1` | Server bind address |
+| `PORT` | `6969` | Server port |
+
+## Running
+
+```bash
+# With Docker (recommended)
+make build
+make run
+```
+
+The MCP Inspector is available at `http://localhost:6274`. Use `http://trilium-fastmcp:6969/mcp` as the server URL inside the inspector.
+
 ## Development
 
 ```bash
-# Run linter
-uv run ruff check .
-
-# Run formatter
-uv run ruff format .
-
-# Run type checker
-uv run mypy .
+make lint        # Run linter
+make fix         # Run linter with auto-fix
+make format      # Run formatter
+make typecheck   # Run type checker (strict)
+make security    # Run bandit security scan
+make audit       # Run dependency vulnerability check
+make check       # Run all checks
 ```
