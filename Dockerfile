@@ -26,5 +26,6 @@ COPY --from=builder --chown=app:app /app /app
 USER app
 
 ENV PATH="/app/.venv/bin:$PATH"
+ENV PYTHONPATH="/app"
 
 CMD ["python", "app/main.py"]

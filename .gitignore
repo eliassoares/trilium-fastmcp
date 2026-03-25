@@ -11,3 +11,5 @@ wheels/
 
 # AI stuff
 .claude
+
+.env

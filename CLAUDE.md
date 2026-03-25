@@ -8,8 +8,12 @@ MCP (Model Context Protocol) server for Trilium Notes, exposing the ETAPI as MCP
 
 ```
 app/
-├── __init__.py
-└── main.py        # FastMCP server entrypoint
+├── __init__.py      # FastMCP instance (mcp)
+├── main.py          # Server entrypoint — imports tools and runs mcp
+├── config.py        # Env vars (HOST, PORT, TRILIUM_URL, TRILIUM_TOKEN)
+├── client.py        # httpx AsyncClient with get_client() context manager
+├── schemas.py       # Pydantic models (API responses)
+└── tools.py         # MCP tool definitions
 ```
 
 ## Commands
@@ -42,8 +46,9 @@ make clean         # Remove caches and build artifacts
 - Source code lives in `app/`
 - This project wraps Trilium's ETAPI (`/etapi/...`) endpoints as MCP tools
 - See README.md for the full list of ETAPI endpoints to implement
-- Use `httpx` for async HTTP calls to Trilium
+- Use `httpx` for async HTTP calls to Trilium via `get_client()` context manager
 - Each ETAPI resource group (notes, branches, attributes, attachments, etc.) should be its own module under `app/`
+- `tools.py` must be imported in `main.py` as a side-effect to register tools with `mcp`
 
 ## Environment Variables
 
@@ -59,6 +64,17 @@ make clean         # Remove caches and build artifacts
 - `fastmcp.*` is configured with `disallow_untyped_decorators = false` in `pyproject.toml` — no need for `# type: ignore` on `@mcp.tool` decorators
 - mypy pre-commit hook runs via `uv run mypy` (local hook) so it has access to the project `.venv` and installed packages
 
+## Known Issues / Workarounds
+
+- `pygments 2.19.2` has CVE-2026-4539 (no fix yet) — ignored via `pip-audit --ignore-vuln CVE-2026-4539`
+- MCP Inspector: use `http://trilium-fastmcp:6969/mcp` as server URL (not `127.0.0.1`)
+- Docker needs `PYTHONPATH=/app` to resolve `app.*` imports when running `python app/main.py`
+
+## Dependencies
+
+- Runtime: `fastmcp==3.1.1`, `httpx>=0.28.1`, `pydantic==2.12.5`
+- Dev: `ruff`, `mypy`, `bandit`, `pip-audit`, `pre-commit`
+
 ## Conventions
 
 - Write all code in English
@@ -66,3 +82,4 @@ make clean         # Remove caches and build artifacts
 - Prefer `async`/`await` for I/O operations
 - Never hardcode credentials — use environment variables
 - All new code must pass ruff, mypy strict, and bandit before commit
+- Pydantic models use `alias_generator=to_camel` + `populate_by_name=True` to map camelCase API responses

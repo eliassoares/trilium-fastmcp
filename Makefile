@@ -1,4 +1,4 @@
-.PHONY: install lint fix format typecheck security audit check run build clean
+.PHONY: install lint fix format typecheck security audit check test run run-local build clean
 
 install: ## Install dependencies and pre-commit hooks
 	uv sync
@@ -22,7 +22,10 @@ security: ## Run security scan (bandit)
 audit: ## Run dependency vulnerability check
 	uv run pip-audit
 
-check: lint typecheck security audit ## Run all checks
+check: lint typecheck security audit test ## Run all checks
+
+test: ## Run unit tests
+	uv run pytest tests/unit/
 
 build: ## Build Docker image
 	docker compose build

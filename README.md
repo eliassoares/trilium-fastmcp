@@ -8,7 +8,7 @@ This project exposes Trilium's [ETAPI](https://docs.triliumnotes.org/user-guide/
 
 ### App Info
 
-- [ ] `GET /etapi/app-info` — get server version and info
+- [x] `GET /etapi/app-info` — get server version and info
 
 ### Notes
 

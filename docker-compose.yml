@@ -5,6 +5,8 @@ services:
       context: .
       dockerfile: Dockerfile
     image: trilium-fastmcp
+    env_file:
+      - .env
     volumes:
       - .:/app
       - /app/.venv

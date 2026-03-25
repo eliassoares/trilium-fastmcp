@@ -1,16 +1,7 @@
-import os
-
-from fastmcp import FastMCP
-
-mcp = FastMCP("Trilium MCP Server")
-
-
-@mcp.tool
-def greet(name: str) -> str:
-    return f"Hello, {name}!"
+from app import mcp  # noqa: I001
+from app.config import HOST, PORT
+import app.tools  # noqa: F401 — side-effect: registers all tools with mcp
 
 
 if __name__ == "__main__":
-    host = os.getenv("HOST", "127.0.0.1")
-    port = int(os.getenv("PORT", "6969"))
-    mcp.run(transport="http", host=host, port=port)
+    mcp.run(transport="http", host=HOST, port=PORT)
