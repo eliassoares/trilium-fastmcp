@@ -9,11 +9,15 @@ MCP (Model Context Protocol) server for Trilium Notes, exposing the ETAPI as MCP
 ```
 app/
 ├── __init__.py      # FastMCP instance (mcp)
-├── main.py          # Server entrypoint — imports tools and runs mcp
+├── main.py          # Server entrypoint — side-effect imports tool modules + runs mcp
 ├── config.py        # Env vars (HOST, PORT, TRILIUM_URL, TRILIUM_TOKEN)
 ├── client.py        # httpx AsyncClient with get_client() context manager
-├── schemas.py       # Pydantic models (API responses)
-└── tools.py         # MCP tool definitions
+├── general/
+│   ├── schemas.py   # AppInfoResponse
+│   └── tools.py     # get_application_information
+└── notes/
+    ├── schemas.py   # Note, Attribute, Branch, SearchNotesParams, SearchNotesResponse, enums
+    └── tools.py     # search_notes
 ```
 
 ## Commands
@@ -29,6 +33,7 @@ make audit         # Dependency CVE check with pip-audit
 make check         # Run all checks
 make build         # Build Docker image (docker compose build)
 make run           # Run via docker-compose (server + mcp-inspector)
+make down          # Stop and remove docker-compose containers
 make run-local     # Run locally with uv
 make clean         # Remove caches and build artifacts
 ```
@@ -47,8 +52,10 @@ make clean         # Remove caches and build artifacts
 - This project wraps Trilium's ETAPI (`/etapi/...`) endpoints as MCP tools
 - See README.md for the full list of ETAPI endpoints to implement
 - Use `httpx` for async HTTP calls to Trilium via `get_client()` context manager
-- Each ETAPI resource group (notes, branches, attributes, attachments, etc.) should be its own module under `app/`
-- `tools.py` must be imported in `main.py` as a side-effect to register tools with `mcp`
+- Each ETAPI resource group gets its own module under `app/` with `schemas.py` and `tools.py`
+- Each module's `tools.py` must be imported in `main.py` as a side-effect to register tools with `mcp`
+- Tool parameters use `Annotated[type, Field(description=...)]`; construct a Pydantic params model internally
+- Serialize params with `model_dump(by_alias=True, exclude_none=True, mode="json")` for camelCase query strings
 
 ## Environment Variables
 
