@@ -11,5 +11,6 @@ wheels/
 
 # AI stuff
 .claude
+.mcp.json
 
 .env

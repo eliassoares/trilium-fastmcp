@@ -3,7 +3,7 @@ from datetime import datetime
 import pytest
 from pydantic import ValidationError
 
-from app.schemas import AppInfoResponse
+from app.general.schemas import AppInfoResponse
 
 
 def test_parses_camel_case_response(app_info_response: dict[str, object]) -> None:

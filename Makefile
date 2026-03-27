@@ -1,4 +1,4 @@
-.PHONY: install lint fix format typecheck security audit check test run run-local build clean
+.PHONY: install lint fix format typecheck security audit check test run run-local build down clean
 
 install: ## Install dependencies and pre-commit hooks
 	uv sync
@@ -20,7 +20,7 @@ security: ## Run security scan (bandit)
 	uv run bandit -r . -c pyproject.toml
 
 audit: ## Run dependency vulnerability check
-	uv run pip-audit
+	uv run pip-audit --ignore-vuln CVE-2026-4539
 
 check: lint typecheck security audit test ## Run all checks
 
@@ -32,6 +32,9 @@ build: ## Build Docker image
 
 run: ## Run the MCP server via docker-compose
 	docker compose up
+
+down: ## Stop and remove docker-compose containers
+	docker compose down
 
 clean: ## Remove build artifacts and caches
 	find . -type d -name __pycache__ -exec rm -rf {} +

@@ -11,6 +11,27 @@ def trilium_env(monkeypatch: pytest.MonkeyPatch) -> None:
 
 
 @pytest.fixture
+def note_response() -> dict[str, object]:
+    return {
+        "noteId": "evnnmvHTCgIn",
+        "title": "My Note",
+        "type": "text",
+        "mime": "text/html",
+        "isProtected": False,
+        "blobId": "DecH36BK5cLX6dYDg5yx",
+        "attributes": [],
+        "parentNoteIds": [],
+        "childNoteIds": [],
+        "parentBranchIds": [],
+        "childBranchIds": [],
+        "dateCreated": "2022-02-09T22:52:36+01:00",
+        "dateModified": "2022-02-09T22:52:36+01:00",
+        "utcDateCreated": "2022-03-07T21:54:25.277Z",
+        "utcDateModified": "2022-03-07T21:54:25.277Z",
+    }
+
+
+@pytest.fixture
 def app_info_response() -> dict[str, object]:
     return {
         "appVersion": "0.50.2",

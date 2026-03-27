@@ -2,7 +2,7 @@ from mcp.types import ToolAnnotations
 
 from app import mcp
 from app.client import get_client
-from app.schemas import AppInfoResponse
+from app.general.schemas import AppInfoResponse
 
 
 @mcp.tool(

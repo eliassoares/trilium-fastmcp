@@ -12,7 +12,7 @@ This project exposes Trilium's [ETAPI](https://docs.triliumnotes.org/user-guide/
 
 ### Notes
 
-- [ ] `GET /etapi/notes` — search notes
+- [x] `GET /etapi/notes` — search notes
 - [ ] `GET /etapi/notes/:noteId` — get note by ID
 - [ ] `POST /etapi/create-note` — create a new note
 - [ ] `PATCH /etapi/notes/:noteId` — update note metadata

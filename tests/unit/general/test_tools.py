@@ -2,7 +2,7 @@ import httpx
 import pytest
 import respx
 
-from app.tools import get_application_information
+from app.general.tools import get_application_information
 from tests.unit.conftest import TRILIUM_URL
 
 
