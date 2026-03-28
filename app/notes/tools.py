@@ -7,11 +7,11 @@ from pydantic import Field
 from app import mcp
 from app.client import get_client
 from app.notes.schemas import (
+    Note,
     NoteOrderBy,
     NoteOrderDirection,
     SearchNotesParams,
     SearchNotesResponse,
-    Note
 )
 
 logger = logging.getLogger(__name__)
@@ -126,15 +126,37 @@ async def search_notes(
 async def get_note(
     note_id: Annotated[
         str, Field(
-            description="A note id to retrieve",
+            description="A note id to retrieve the note",
             examples=["evnnmvHTCgIn"],
             pattern="[a-zA-Z0-9_]{4,32}",
         )
     ]
-):
+) -> Note:
     async with get_client() as client:
         response = await client.get(
             f"/etapi/notes/{note_id}",
         )
         response.raise_for_status()
         return Note.model_validate(response.json())
+
+@mcp.tool(
+    name="get_note_content",
+    description="Returns note content identified by its ID",
+    annotations=ToolAnnotations(readOnlyHint=True),
+)
+async def get_note_content(
+    note_id: Annotated[
+        str,
+        Field(
+            description="A note id to retrieve the note content",
+            examples=["evnnmvHTCgIn"],
+            pattern="[a-zA-Z0-9_]{4,32}",
+        )
+    ]
+) -> bytes:
+    async with get_client() as client:
+        response = await client.get(
+            f"/etapi/notes/{note_id}/content",
+        )
+        response.raise_for_status()
+        return response.content

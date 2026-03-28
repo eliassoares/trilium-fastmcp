@@ -2,7 +2,7 @@ import httpx
 import pytest
 import respx
 
-from app.notes.tools import get_note, search_notes
+from app.notes.tools import get_note, get_note_content, search_notes
 from tests.unit.conftest import TRILIUM_URL
 
 
@@ -103,3 +103,25 @@ async def test_get_note_raises_on_unauthorized() -> None:
 
     with pytest.raises(httpx.HTTPStatusError):
         await get_note(note_id="evnnmvHTCgIn")
+
+
+@respx.mock
+async def test_get_note_content_returns_html() -> None:
+    html = "<p>Hello world</p>"
+    respx.get(f"{TRILIUM_URL}/etapi/notes/evnnmvHTCgIn/content").mock(
+        return_value=httpx.Response(200, content=html.encode())
+    )
+
+    result = await get_note_content(note_id="evnnmvHTCgIn")
+
+    assert result == html.encode()
+
+
+@respx.mock
+async def test_get_note_content_raises_on_not_found() -> None:
+    respx.get(f"{TRILIUM_URL}/etapi/notes/nonexistent/content").mock(
+        return_value=httpx.Response(404)
+    )
+
+    with pytest.raises(httpx.HTTPStatusError):
+        await get_note_content(note_id="nonexistent")
