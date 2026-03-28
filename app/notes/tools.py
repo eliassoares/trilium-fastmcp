@@ -11,6 +11,7 @@ from app.notes.schemas import (
     NoteOrderDirection,
     SearchNotesParams,
     SearchNotesResponse,
+    Note
 )
 
 logger = logging.getLogger(__name__)
@@ -114,3 +115,26 @@ async def search_notes(
         )
         response.raise_for_status()
         return SearchNotesResponse.model_validate(response.json())
+
+
+@mcp.tool(
+        name="get_note",
+        description="Returns a note identified by its ID",
+        annotations=ToolAnnotations(readOnlyHint=True),
+        output_schema=Note.model_json_schema()
+)
+async def get_note(
+    note_id: Annotated[
+        str, Field(
+            description="A note id to retrieve",
+            examples=["evnnmvHTCgIn"],
+            pattern="[a-zA-Z0-9_]{4,32}",
+        )
+    ]
+):
+    async with get_client() as client:
+        response = await client.get(
+            f"/etapi/notes/{note_id}",
+        )
+        response.raise_for_status()
+        return Note.model_validate(response.json())

@@ -2,7 +2,7 @@ import httpx
 import pytest
 import respx
 
-from app.notes.tools import search_notes
+from app.notes.tools import get_note, search_notes
 from tests.unit.conftest import TRILIUM_URL
 
 
@@ -65,3 +65,41 @@ async def test_search_notes_raises_on_error() -> None:
 
     with pytest.raises(httpx.HTTPStatusError):
         await search_notes(search="#book")
+
+
+@respx.mock
+async def test_get_note_returns_note(
+    note_response: dict[str, object],
+) -> None:
+    respx.get(f"{TRILIUM_URL}/etapi/notes/evnnmvHTCgIn").mock(
+        return_value=httpx.Response(200, json=note_response)
+    )
+
+    result = await get_note(note_id="evnnmvHTCgIn")
+
+    assert result.note_id == "evnnmvHTCgIn"
+    assert result.title == "My Note"
+    assert result.type.value == "text"
+    assert result.mime == "text/html"
+    assert result.is_protected is False
+
+
+
+@respx.mock
+async def test_get_note_raises_on_not_found() -> None:
+    respx.get(f"{TRILIUM_URL}/etapi/notes/nonexistent").mock(
+        return_value=httpx.Response(404)
+    )
+
+    with pytest.raises(httpx.HTTPStatusError):
+        await get_note(note_id="nonexistent")
+
+
+@respx.mock
+async def test_get_note_raises_on_unauthorized() -> None:
+    respx.get(f"{TRILIUM_URL}/etapi/notes/evnnmvHTCgIn").mock(
+        return_value=httpx.Response(401)
+    )
+
+    with pytest.raises(httpx.HTTPStatusError):
+        await get_note(note_id="evnnmvHTCgIn")
