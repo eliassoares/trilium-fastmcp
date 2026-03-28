@@ -109,4 +109,5 @@ make typecheck   # Run type checker (strict)
 make security    # Run bandit security scan
 make audit       # Run dependency vulnerability check
 make check       # Run all checks
+make test        # Run tests
 ```
