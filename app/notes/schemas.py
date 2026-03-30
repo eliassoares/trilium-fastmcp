@@ -292,6 +292,23 @@ class SearchNotesParams(BaseModel):
     )
 
 
+class CreateNoteParams(BaseModel):
+    model_config = ConfigDict(populate_by_name=True, alias_generator=to_camel)
+
+    parent_note_id: str
+    title: str
+    type: NoteType
+    content: str
+    mime: str | None = None
+    note_position: int | None = None
+    prefix: str | None = None
+    is_expanded: bool = False
+    note_id: str | None = None
+    branch_id: str | None = None
+    date_created: datetime | None = None
+    utc_date_created: datetime | None = None
+
+
 class SearchNotesResponse(BaseModel):
     model_config = ConfigDict(populate_by_name=True, alias_generator=to_camel)
 

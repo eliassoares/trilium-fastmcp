@@ -32,6 +32,22 @@ def note_response() -> dict[str, object]:
 
 
 @pytest.fixture
+def note_with_branch_response(note_response: dict[str, object]) -> dict[str, object]:
+    return {
+        "note": note_response,
+        "branch": {
+            "branchId": "evnnmvHTCgIn",
+            "noteId": "evnnmvHTCgIn",
+            "parentNoteId": "parentNoteId1",
+            "prefix": None,
+            "notePosition": 10,
+            "isExpanded": False,
+            "utcDateModified": "2022-03-07T21:54:25.277Z",
+        },
+    }
+
+
+@pytest.fixture
 def app_info_response() -> dict[str, object]:
     return {
         "appVersion": "0.50.2",

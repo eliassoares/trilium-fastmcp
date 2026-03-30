@@ -1,9 +1,11 @@
+import json
+
 import httpx
 import pytest
 import respx
 
-from app.notes.schemas import NoteExportType
-from app.notes.tools import export_note, get_note, get_note_content, search_notes
+from app.notes.schemas import NoteExportType, NoteType
+from app.notes.tools import create_note, export_note, get_note, get_note_content, search_notes
 from tests.unit.conftest import TRILIUM_URL
 
 
@@ -158,3 +160,61 @@ async def test_export_note_raises_on_not_found() -> None:
 
     with pytest.raises(httpx.HTTPStatusError):
         await export_note(note_id="nonexistent")
+
+
+@respx.mock
+async def test_create_note_returns_note_with_branch(
+    note_with_branch_response: dict[str, object],
+) -> None:
+    respx.post(f"{TRILIUM_URL}/etapi/create-note").mock(
+        return_value=httpx.Response(200, json=note_with_branch_response)
+    )
+
+    result = await create_note(
+        parent_note_id="parentNoteId1",
+        title="My Note",
+        note_type=NoteType.text,
+        content="hello",
+    )
+
+    assert result.note.note_id == "evnnmvHTCgIn"
+    assert result.note.title == "My Note"
+    assert result.branch.parent_note_id == "parentNoteId1"
+
+
+@respx.mock
+async def test_create_note_serializes_payload(
+    note_with_branch_response: dict[str, object],
+) -> None:
+    request = respx.post(f"{TRILIUM_URL}/etapi/create-note").mock(
+        return_value=httpx.Response(200, json=note_with_branch_response)
+    )
+
+    await create_note(
+        parent_note_id="parentNoteId1",
+        title="My Note",
+        note_type=NoteType.text,
+        content="hello",
+    )
+
+    payload = json.loads(request.calls.last.request.content)
+    assert payload["parentNoteId"] == "parentNoteId1"
+    assert payload["type"] == "text"
+    assert "mime" not in payload
+    assert "notePosition" not in payload
+    assert "prefix" not in payload
+
+
+@respx.mock
+async def test_create_note_raises_on_error() -> None:
+    respx.post(f"{TRILIUM_URL}/etapi/create-note").mock(
+        return_value=httpx.Response(400)
+    )
+
+    with pytest.raises(httpx.HTTPStatusError):
+        await create_note(
+            parent_note_id="parentNoteId1",
+            title="My Note",
+            note_type=NoteType.text,
+            content="hello",
+        )

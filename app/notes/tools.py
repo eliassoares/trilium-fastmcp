@@ -1,4 +1,5 @@
 import logging
+from datetime import datetime
 from typing import Annotated
 
 from fastmcp.utilities.types import File
@@ -8,10 +9,13 @@ from pydantic import Field
 from app import mcp
 from app.client import get_client
 from app.notes.schemas import (
+    CreateNoteParams,
     Note,
     NoteExportType,
     NoteOrderBy,
     NoteOrderDirection,
+    NoteType,
+    NoteWithBranch,
     SearchNotesParams,
     SearchNotesResponse,
 )
@@ -208,3 +212,135 @@ async def export_note(
             format="zip",
             name=f"{note_id}_export.zip",
         )
+
+
+@mcp.tool(
+    name="create_note",
+    description=(
+        "Create a note and place it into the note tree"
+    ),
+    annotations=ToolAnnotations(readOnlyHint=False),
+)
+async def create_note(
+    parent_note_id: Annotated[
+        str,
+        Field(
+            description="Note ID of the parent note in the tree",
+            examples=["evnnmvHTCgIn"],
+            pattern="[a-zA-Z0-9_]{4,32}"
+        ),
+    ],
+    title: Annotated[
+        str,
+        Field(description="Note title",
+              examples=["Cruzeiro, maior de Minas Gerais"]
+              ),
+    ],
+    note_type: Annotated[
+        NoteType,
+        Field(
+            description="Note type",
+            examples=["text", "file"]
+        ),
+    ],
+    content: Annotated[
+        str,
+        Field(
+            description="Note content",
+            examples=["CRU 6 x ATL 1"]
+        ),
+    ],
+    mime: Annotated[
+        str | None,
+        Field(
+            description="Note mime. This needs to be specified only for note types 'code', 'file', 'image'.",
+            examples=["application/json"]
+        ),
+    ] = None,
+    note_position: Annotated[
+        int | None,
+        Field(
+            description=(
+                "Position of the note in the parent. Normal ordering is 10, 20, 30 ... "
+                "So if you want to create a note on the first position, use e.g. 5, for second position 15, for last e.g. 1000000"
+            ),
+            examples=[10, 20]
+        ),
+    ] = None,
+    prefix: Annotated[
+        str | None,
+        Field(
+            description=(
+                "Prefix is branch (placement) specific title prefix for the note. "
+                "Let's say you have your note placed into two different places in the tree, "
+                "but you want to change the title a bit in one of the placements. "
+                "For this you can use prefix."
+            ),
+            examples=["Cruzei"]
+        ),
+    ] = None,
+    is_expanded: Annotated[
+        bool,
+        Field(
+            description="A bool that says: true if this note (as a folder) should appear expanded",
+            examples=[True]
+        ),
+    ] = False,
+    note_id: Annotated[
+        str | None,
+        Field(
+            description="Note ID. DON'T specify unless you want to force a specific noteId",
+            examples=["evnnmvHTCgIn"],
+            pattern="[a-zA-Z0-9_]{4,32}"
+        ),
+    ] = None,
+    branch_id: Annotated[
+        str | None,
+        Field(
+            description="Branch ID. DON'T specify unless you want to force a specific branchId",
+            examples=["evnnmvHTCgIn"],
+            pattern="[a-zA-Z0-9_]{4,32}"
+        ),
+    ] = None,
+    date_created:  Annotated[
+        datetime | None,
+        Field(
+            description=(
+                "Local timestap of the note creation. Specify only if you want to override "
+                "the default (current datetime in the current timezone/offset)."
+            ),
+            examples=[datetime.fromisoformat("2022-02-09T22:52:36+01:00")],
+        ),
+    ] = None,
+    utc_date_created:  Annotated[
+        datetime | None,
+        Field(
+            description=(
+                "UTC timestap of the note creation. Specify only if you want "
+                "to override the default (current datetime)."
+            ),
+            examples=[datetime.fromisoformat("2022-02-09T22:52:36+01:00")],
+        ),
+    ] = None,
+) -> NoteWithBranch:
+    params = CreateNoteParams(
+        parent_note_id=parent_note_id,
+        title=title,
+        type=note_type,
+        content=content,
+        mime=mime,
+        note_position=note_position,
+        prefix=prefix,
+        is_expanded=is_expanded,
+        note_id=note_id,
+        branch_id=branch_id,
+        date_created=date_created,
+        utc_date_created=utc_date_created,
+    )
+    async with get_client() as client:
+        response = await client.post(
+            "/etapi/create-note",
+            json=params.model_dump(by_alias=True, exclude_none=True, mode="json"),
+        )
+        response.raise_for_status()
+        return NoteWithBranch.model_validate(response.json())
