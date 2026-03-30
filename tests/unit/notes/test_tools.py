@@ -5,7 +5,13 @@ import pytest
 import respx
 
 from app.notes.schemas import NoteExportType, NoteType
-from app.notes.tools import create_note, export_note, get_note, get_note_content, search_notes
+from app.notes.tools import (
+    create_note,
+    export_note,
+    get_note,
+    get_note_content,
+    search_notes,
+)
 from tests.unit.conftest import TRILIUM_URL
 
 

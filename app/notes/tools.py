@@ -11,6 +11,7 @@ from app.client import get_client
 from app.notes.schemas import (
     CreateNoteParams,
     Note,
+    NoteAttachment,
     NoteExportType,
     NoteOrderBy,
     NoteOrderDirection,
@@ -340,7 +341,31 @@ async def create_note(
     async with get_client() as client:
         response = await client.post(
             "/etapi/create-note",
-            json=params.model_dump(by_alias=True, exclude_none=True, mode="json"),
+            json=params.model_dump(
+                by_alias=True, exclude_none=True, mode="json"),
         )
         response.raise_for_status()
         return NoteWithBranch.model_validate(response.json())
+
+
+@mcp.tool(
+    name="get_note_attachments",
+    description="Returns all attachments for a note identified by its ID",
+    annotations=ToolAnnotations(readOnlyHint=True),
+)
+async def get_note_attachments(
+    note_id: Annotated[
+        str,
+        Field(
+            description="A note id to retrieve the attachments",
+            examples=["evnnmvHTCgIn"],
+            pattern="[a-zA-Z0-9_]{4,32}",
+        ),
+    ],
+) -> list[NoteAttachment]:
+    async with get_client() as client:
+        response = await client.get(
+            f"/etapi/notes/{note_id}/attachments",
+        )
+        response.raise_for_status()
+        return [NoteAttachment.model_validate(item) for item in response.json()]
