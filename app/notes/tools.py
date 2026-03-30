@@ -1,6 +1,7 @@
 import logging
 from typing import Annotated
 
+from fastmcp.utilities.types import File
 from mcp.types import ToolAnnotations
 from pydantic import Field
 
@@ -8,6 +9,7 @@ from app import mcp
 from app.client import get_client
 from app.notes.schemas import (
     Note,
+    NoteExportType,
     NoteOrderBy,
     NoteOrderDirection,
     SearchNotesParams,
@@ -85,7 +87,11 @@ async def search_notes(
     ] = NoteOrderDirection.asc,
     limit: Annotated[
         int | None,
-        Field(description="Maximum number of results to return", examples=[10], gt=0),
+        Field(
+            description="Maximum number of results to return",
+            examples=[10],
+            gt=0
+        ),
     ] = None,
     debug: Annotated[
         bool,
@@ -111,26 +117,29 @@ async def search_notes(
         logger.info("Calling search_notes with query: %s", search)
         response = await client.get(
             "/etapi/notes",
-            params=params.model_dump(by_alias=True, exclude_none=True, mode="json"),
+            params=params.model_dump(
+                by_alias=True, exclude_none=True, mode="json"
+            ),
         )
         response.raise_for_status()
         return SearchNotesResponse.model_validate(response.json())
 
 
 @mcp.tool(
-        name="get_note",
-        description="Returns a note identified by its ID",
-        annotations=ToolAnnotations(readOnlyHint=True),
-        output_schema=Note.model_json_schema()
+    name="get_note",
+    description="Returns a note identified by its ID",
+    annotations=ToolAnnotations(readOnlyHint=True),
+    output_schema=Note.model_json_schema(),
 )
 async def get_note(
     note_id: Annotated[
-        str, Field(
+        str,
+        Field(
             description="A note id to retrieve the note",
             examples=["evnnmvHTCgIn"],
             pattern="[a-zA-Z0-9_]{4,32}",
-        )
-    ]
+        ),
+    ],
 ) -> Note:
     async with get_client() as client:
         response = await client.get(
@@ -138,6 +147,7 @@ async def get_note(
         )
         response.raise_for_status()
         return Note.model_validate(response.json())
+
 
 @mcp.tool(
     name="get_note_content",
@@ -151,8 +161,8 @@ async def get_note_content(
             description="A note id to retrieve the note content",
             examples=["evnnmvHTCgIn"],
             pattern="[a-zA-Z0-9_]{4,32}",
-        )
-    ]
+        ),
+    ],
 ) -> bytes:
     async with get_client() as client:
         response = await client.get(
@@ -160,3 +170,41 @@ async def get_note_content(
         )
         response.raise_for_status()
         return response.content
+
+
+@mcp.tool(
+    name="export_note",
+    description=(
+        "Exports ZIP file export of a given note subtree. "
+        "To export whole document, use 'root' for noteId"
+    ),
+    annotations=ToolAnnotations(readOnlyHint=True),
+)
+async def export_note(
+    note_id: Annotated[
+        str,
+        Field(
+            description="A note id to export the note",
+            examples=["evnnmvHTCgIn"],
+            pattern="[a-zA-Z0-9_]{4,32}",
+        ),
+    ],
+    export_format: Annotated[
+        NoteExportType,
+        Field(
+            description="The exporting format. Default: markdown",
+            examples=[NoteExportType.markdown.value],
+        ),
+    ] = NoteExportType.markdown,
+) -> File:
+    async with get_client() as client:
+        response = await client.get(
+            f"/etapi/notes/{note_id}/export",
+            params={"format": export_format.value},
+        )
+        response.raise_for_status()
+        return File(
+            data=response.content,
+            format="zip",
+            name=f"{note_id}_export.zip",
+        )

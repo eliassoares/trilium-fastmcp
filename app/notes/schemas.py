@@ -54,6 +54,12 @@ class NoteType(Enum):
     launcher = "launcher"
 
 
+class NoteExportType(Enum):
+    html = "html"
+    markdown = "markdown"
+    share = "share"
+
+
 class AttributeType(Enum):
     label = "label"
     relation = "relation"

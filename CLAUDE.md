@@ -17,7 +17,7 @@ app/
 │   └── tools.py     # get_application_information
 └── notes/
     ├── schemas.py   # Note, Attribute, Branch, NoteWithBranch, SearchNotesParams, SearchNotesResponse, enums
-    └── tools.py     # search_notes, get_note, get_note_content
+    └── tools.py     # search_notes, get_note, get_note_content, export_note
 ```
 
 ## Commands

@@ -2,7 +2,8 @@ import httpx
 import pytest
 import respx
 
-from app.notes.tools import get_note, get_note_content, search_notes
+from app.notes.schemas import NoteExportType
+from app.notes.tools import export_note, get_note, get_note_content, search_notes
 from tests.unit.conftest import TRILIUM_URL
 
 
@@ -84,7 +85,6 @@ async def test_get_note_returns_note(
     assert result.is_protected is False
 
 
-
 @respx.mock
 async def test_get_note_raises_on_not_found() -> None:
     respx.get(f"{TRILIUM_URL}/etapi/notes/nonexistent").mock(
@@ -125,3 +125,36 @@ async def test_get_note_content_raises_on_not_found() -> None:
 
     with pytest.raises(httpx.HTTPStatusError):
         await get_note_content(note_id="nonexistent")
+
+
+@respx.mock
+async def test_export_note_returns_zip() -> None:
+    zip_bytes = b"PK\x03\x04fake-zip-content"
+    respx.get(f"{TRILIUM_URL}/etapi/notes/evnnmvHTCgIn/export").mock(
+        return_value=httpx.Response(200, content=zip_bytes)
+    )
+
+    result = await export_note(note_id="evnnmvHTCgIn")
+
+    assert result.data == zip_bytes
+
+
+@respx.mock
+async def test_export_note_passes_format_param() -> None:
+    request = respx.get(f"{TRILIUM_URL}/etapi/notes/evnnmvHTCgIn/export").mock(
+        return_value=httpx.Response(200, content=b"PK\x03\x04fake-zip-content")
+    )
+
+    await export_note(note_id="evnnmvHTCgIn", export_format=NoteExportType.html)
+
+    assert request.calls.last.request.url.params["format"] == "html"
+
+
+@respx.mock
+async def test_export_note_raises_on_not_found() -> None:
+    respx.get(f"{TRILIUM_URL}/etapi/notes/nonexistent/export").mock(
+        return_value=httpx.Response(404)
+    )
+
+    with pytest.raises(httpx.HTTPStatusError):
+        await export_note(note_id="nonexistent")

@@ -17,3 +17,5 @@ wheels/
 .mcp.json
 
 .env
+
+.DS_Store
