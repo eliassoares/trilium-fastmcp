@@ -23,6 +23,9 @@ This project exposes Trilium's [ETAPI](https://docs.triliumnotes.org/user-guide/
 - [ ] `POST /etapi/notes/:noteId/import` — import into a note
 - [ ] `POST /etapi/notes/:noteId/revision` — create a note revision
 - [x] `GET /etapi/notes/:noteId/attachments` — list note attachments
+- [ ] `GET /etapi/notes/history` — get note history
+- [ ] `GET /etapi/notes/:noteId/revisions` — list note revisions
+- [ ] `POST /etapi/notes/:noteId/undelete` — undelete a note
 
 ### Branches
 
@@ -50,6 +53,7 @@ This project exposes Trilium's [ETAPI](https://docs.triliumnotes.org/user-guide/
 
 ### Auth
 
+- [ ] `POST /etapi/auth/login` — login
 - [ ] `POST /etapi/auth/logout` — logout / invalidate token
 
 ### Backup
@@ -60,10 +64,14 @@ This project exposes Trilium's [ETAPI](https://docs.triliumnotes.org/user-guide/
 
 - [ ] `GET /etapi/inbox/:date` — get inbox note for a date
 - [ ] `GET /etapi/calendar/days/:date` — get day note
-- [ ] `GET /etapi/calendar/week-first-day/:date` — get first day of week note
 - [ ] `GET /etapi/calendar/weeks/:week` — get week note
 - [ ] `GET /etapi/calendar/months/:month` — get month note
 - [ ] `GET /etapi/calendar/years/:year` — get year note
+
+### Revisions
+
+- [ ] `GET /etapi/revisions/:revisionId` — get revision by ID
+- [ ] `GET /etapi/revisions/:revisionId/content` — get revision content
 
 ## Setup
 
