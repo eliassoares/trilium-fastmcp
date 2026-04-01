@@ -254,7 +254,10 @@ async def create_note(
     mime: Annotated[
         str | None,
         Field(
-            description="Note mime. This needs to be specified only for note types 'code', 'file', 'image'.",
+            description=(
+                "Note mime. This needs to be specified "
+                "only for note types 'code', 'file', 'image'."
+            ),
             examples=["application/json"]
         ),
     ] = None,
@@ -263,7 +266,9 @@ async def create_note(
         Field(
             description=(
                 "Position of the note in the parent. Normal ordering is 10, 20, 30 ... "
-                "So if you want to create a note on the first position, use e.g. 5, for second position 15, for last e.g. 1000000"
+                "So if you want to create a note on the first position, "
+                "use e.g. 5, for second position 15, "
+                "for last e.g. 1000000"
             ),
             examples=[10, 20]
         ),
@@ -273,7 +278,8 @@ async def create_note(
         Field(
             description=(
                 "Prefix is branch (placement) specific title prefix for the note. "
-                "Let's say you have your note placed into two different places in the tree, "
+                "Let's say you have your note placed into two "
+                "different places in the tree, "
                 "but you want to change the title a bit in one of the placements. "
                 "For this you can use prefix."
             ),
@@ -283,14 +289,20 @@ async def create_note(
     is_expanded: Annotated[
         bool,
         Field(
-            description="A bool that says: true if this note (as a folder) should appear expanded",
+            description=(
+                "A bool that says: true if this note "
+                "(as a folder) should appear expanded"
+            ),
             examples=[True]
         ),
     ] = False,
     note_id: Annotated[
         str | None,
         Field(
-            description="Note ID. DON'T specify unless you want to force a specific noteId",
+            description=(
+                "Note ID. DON'T specify unless you "
+                "want to force a specific noteId"
+            ),
             examples=["evnnmvHTCgIn"],
             pattern="[a-zA-Z0-9_]{4,32}"
         ),
@@ -298,7 +310,10 @@ async def create_note(
     branch_id: Annotated[
         str | None,
         Field(
-            description="Branch ID. DON'T specify unless you want to force a specific branchId",
+            description=(
+                "Branch ID. DON'T specify unless you "
+                "want to force a specific branchId"
+            ),
             examples=["evnnmvHTCgIn"],
             pattern="[a-zA-Z0-9_]{4,32}"
         ),
@@ -307,8 +322,10 @@ async def create_note(
         datetime | None,
         Field(
             description=(
-                "Local timestap of the note creation. Specify only if you want to override "
-                "the default (current datetime in the current timezone/offset)."
+                "Local timestap of the note creation. "
+                "Specify only if you want to override "
+                "the default (current datetime in the "
+                "current timezone/offset)."
             ),
             examples=[datetime.fromisoformat("2022-02-09T22:52:36+01:00")],
         ),

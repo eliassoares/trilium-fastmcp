@@ -1,7 +1,11 @@
-from os import getenv
+from pydantic_settings import BaseSettings
 
-HOST = getenv("HOST", "127.0.0.1")
-PORT = int(getenv("PORT", "6969"))
 
-TRILIUM_TOKEN = getenv("TRILIUM_TOKEN")
-TRILIUM_URL = getenv("TRILIUM_URL")
+class Settings(BaseSettings):
+    host: str = "127.0.0.1"
+    port: int = 6969
+    trilium_token: str | None = None
+    trilium_url: str | None = None
+
+
+settings = Settings()

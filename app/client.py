@@ -1,13 +1,14 @@
-import os
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 
 import httpx
 
+from app.config import settings
+
 
 def _build_client() -> httpx.AsyncClient:
-    trilium_url = os.getenv("TRILIUM_URL")
-    trilium_token = os.getenv("TRILIUM_TOKEN")
+    trilium_url = settings.trilium_url
+    trilium_token = settings.trilium_token
 
     if not trilium_url:
         raise RuntimeError("TRILIUM_URL environment variable is not set")

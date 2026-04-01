@@ -198,7 +198,11 @@ class Note(BaseModel):
         pattern="[a-zA-Z0-9_]{4,32}",
     )
     title: str = Field(..., description="Note title", examples=["My Note"])
-    type: NoteType = Field(..., description="Note type", examples=[NoteType.text.value])
+    type: NoteType = Field(
+        ...,
+        description="Note type",
+        examples=[NoteType.text.value]
+    )
     mime: str = Field(
         ...,
         description=(
@@ -307,7 +311,10 @@ class NoteWithBranch(BaseModel):
     model_config = ConfigDict(populate_by_name=True, alias_generator=to_camel)
 
     note: Note = Field(..., description="The created note")
-    branch: Branch = Field(..., description="The branch placing the note in the tree")
+    branch: Branch = Field(
+        ...,
+        description="The branch placing the note in the tree"
+    )
 
 
 class SearchNotesParams(BaseModel):
