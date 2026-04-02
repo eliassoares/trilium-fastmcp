@@ -60,6 +60,59 @@ class NoteExportType(Enum):
     share = "share"
 
 
+class NoteRecentChange(BaseModel):
+    model_config = ConfigDict(populate_by_name=True, alias_generator=to_camel)
+
+    note_id: str = Field(
+        ...,
+        description="Identifies the note this change belongs to",
+        examples=["evnnmvHTCgIn"],
+        pattern="[a-zA-Z0-9_]{4,32}",
+    )
+    title: str = Field(
+        ...,
+        description=(
+            "Title at the time of the change "
+            "(may be '[protected]' for protected notes)"
+        ),
+    )
+    current_title: str = Field(
+        ...,
+        description=(
+            "Current title of the note "
+            "(may be '[protected]' for protected notes)"
+        ),
+    )
+    current_is_deleted: bool | None = Field(
+        default=None,
+        description="Whether the note is currently deleted",
+    )
+    current_delete_id: str | None = Field(
+        default=None,
+        description="Delete ID if the note is deleted",
+    )
+    current_is_protected: bool | None = Field(
+        default=None,
+        description="Whether the note is protected",
+    )
+    utc_date: datetime = Field(
+        ...,
+        description="UTC timestamp of the change",
+        examples=[datetime.fromisoformat("2022-03-07T21:54:25.277+00:00")],
+    )
+    date: datetime = Field(
+        ...,
+        description="Local timestamp of the change",
+        examples=[datetime.fromisoformat("2022-03-07T21:54:25.277+00:00")],
+    )
+    can_be_undeleted: bool | None = Field(
+        default=None,
+        description=(
+            "Whether the note can be undeleted (only present for deleted notes)"
+        ),
+    )
+
+
 class AttributeType(Enum):
     label = "label"
     relation = "relation"

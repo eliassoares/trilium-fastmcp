@@ -15,6 +15,7 @@ from app.notes.schemas import (
     NoteExportType,
     NoteOrderBy,
     NoteOrderDirection,
+    NoteRecentChange,
     NoteType,
     NoteWithBranch,
     SearchNotesParams,
@@ -216,6 +217,58 @@ async def export_note(
 
 
 @mcp.tool(
+    name="get_note_attachments",
+    description="Returns all attachments for a note identified by its ID",
+    annotations=ToolAnnotations(readOnlyHint=True),
+)
+async def get_note_attachments(
+    note_id: Annotated[
+        str,
+        Field(
+            description="A note id to retrieve the attachments",
+            examples=["evnnmvHTCgIn"],
+            pattern="[a-zA-Z0-9_]{4,32}",
+        ),
+    ],
+) -> list[NoteAttachment]:
+    async with get_client() as client:
+        response = await client.get(
+            f"/etapi/notes/{note_id}/attachments",
+        )
+        response.raise_for_status()
+        return [NoteAttachment.model_validate(item) for item in response.json()]
+
+
+@mcp.tool(
+    name="get_note_history",
+    description=(
+        "Returns recent changes including note creations, modifications, and deletions"
+    ),
+    annotations=ToolAnnotations(readOnlyHint=True)
+)
+async def get_note_history(
+    ancestor_note_id: Annotated[
+        str,
+        Field(
+            description=(
+                "Limit changes to a subtree identified by this note ID. "
+                "Defaults to 'root' (all notes)."
+            ),
+            examples=["evnnmvHTCgIn"],
+            pattern="[a-zA-Z0-9_]{4,32}",
+        ),
+    ] = "root",
+) -> list[NoteRecentChange]:
+    async with get_client() as client:
+        response = await client.get(
+            "/etapi/notes/history",
+            params={"ancestorNoteId": ancestor_note_id}
+        )
+        response.raise_for_status()
+        return [NoteRecentChange.model_validate(item) for item in response.json()]
+
+
+@mcp.tool(
     name="create_note",
     description=(
         "Create a note and place it into the note tree"
@@ -363,26 +416,3 @@ async def create_note(
         )
         response.raise_for_status()
         return NoteWithBranch.model_validate(response.json())
-
-
-@mcp.tool(
-    name="get_note_attachments",
-    description="Returns all attachments for a note identified by its ID",
-    annotations=ToolAnnotations(readOnlyHint=True),
-)
-async def get_note_attachments(
-    note_id: Annotated[
-        str,
-        Field(
-            description="A note id to retrieve the attachments",
-            examples=["evnnmvHTCgIn"],
-            pattern="[a-zA-Z0-9_]{4,32}",
-        ),
-    ],
-) -> list[NoteAttachment]:
-    async with get_client() as client:
-        response = await client.get(
-            f"/etapi/notes/{note_id}/attachments",
-        )
-        response.raise_for_status()
-        return [NoteAttachment.model_validate(item) for item in response.json()]
