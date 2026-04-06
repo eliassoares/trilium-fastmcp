@@ -11,6 +11,7 @@ from app.notes.tools import (
     get_note,
     get_note_content,
     search_notes,
+    update_note_metadata,
 )
 from tests.unit.conftest import TRILIUM_URL
 
@@ -224,3 +225,68 @@ async def test_create_note_raises_on_error() -> None:
             note_type=NoteType.text,
             content="hello",
         )
+
+
+@respx.mock
+async def test_update_note_metadata_returns_note(
+    note_response: dict[str, object],
+) -> None:
+    respx.patch(f"{TRILIUM_URL}/etapi/notes/evnnmvHTCgIn").mock(
+        return_value=httpx.Response(200, json=note_response)
+    )
+
+    result = await update_note_metadata(note_id="evnnmvHTCgIn", title="New Title")
+
+    assert result.note_id == "evnnmvHTCgIn"
+    assert result.title == "My Note"
+
+
+@respx.mock
+async def test_update_note_metadata_serializes_payload(
+    note_response: dict[str, object],
+) -> None:
+    request = respx.patch(f"{TRILIUM_URL}/etapi/notes/evnnmvHTCgIn").mock(
+        return_value=httpx.Response(200, json=note_response)
+    )
+
+    await update_note_metadata(note_id="evnnmvHTCgIn", title="New Title", note_type=NoteType.text)
+
+    payload = json.loads(request.calls.last.request.content)
+    assert payload["title"] == "New Title"
+    assert payload["type"] == "text"
+    assert "noteId" not in payload
+    assert "mime" not in payload
+
+
+@respx.mock
+async def test_update_note_metadata_omits_none_fields(
+    note_response: dict[str, object],
+) -> None:
+    request = respx.patch(f"{TRILIUM_URL}/etapi/notes/evnnmvHTCgIn").mock(
+        return_value=httpx.Response(200, json=note_response)
+    )
+
+    await update_note_metadata(note_id="evnnmvHTCgIn", title="New Title")
+
+    payload = json.loads(request.calls.last.request.content)
+    assert list(payload.keys()) == ["title"]
+
+
+@respx.mock
+async def test_update_note_metadata_raises_on_not_found() -> None:
+    respx.patch(f"{TRILIUM_URL}/etapi/notes/nonexistent").mock(
+        return_value=httpx.Response(404)
+    )
+
+    with pytest.raises(httpx.HTTPStatusError):
+        await update_note_metadata(note_id="nonexistent", title="New Title")
+
+
+@respx.mock
+async def test_update_note_metadata_raises_on_unauthorized() -> None:
+    respx.patch(f"{TRILIUM_URL}/etapi/notes/evnnmvHTCgIn").mock(
+        return_value=httpx.Response(401)
+    )
+
+    with pytest.raises(httpx.HTTPStatusError):
+        await update_note_metadata(note_id="evnnmvHTCgIn", title="New Title")

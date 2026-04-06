@@ -7,5 +7,7 @@ class Settings(BaseSettings):
     trilium_token: str | None = None
     trilium_url: str | None = None
 
+    updating_disabled: bool = True
+
 
 settings = Settings()

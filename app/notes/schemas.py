@@ -445,6 +445,16 @@ class CreateNoteParams(BaseModel):
     utc_date_created: datetime | None = None
 
 
+class UpdateNoteParams(BaseModel):
+    model_config = ConfigDict(populate_by_name=True, alias_generator=to_camel)
+
+    title: str | None = None
+    type: NoteType | None = None
+    mime: str | None = None
+    date_created: datetime | None = None
+    utc_date_created: datetime | None = None
+
+
 class SearchNotesResponse(BaseModel):
     model_config = ConfigDict(populate_by_name=True, alias_generator=to_camel)
 

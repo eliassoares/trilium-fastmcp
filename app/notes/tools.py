@@ -20,6 +20,7 @@ from app.notes.schemas import (
     NoteWithBranch,
     SearchNotesParams,
     SearchNotesResponse,
+    UpdateNoteParams
 )
 
 from app.revision.schemas import Revision
@@ -398,7 +399,7 @@ async def create_note(
         datetime | None,
         Field(
             description=(
-                "Local timestap of the note creation. "
+                "Local timestamp of the note creation. "
                 "Specify only if you want to override "
                 "the default (current datetime in the "
                 "current timezone/offset)."
@@ -410,7 +411,7 @@ async def create_note(
         datetime | None,
         Field(
             description=(
-                "UTC timestap of the note creation. Specify only if you want "
+                "UTC timestamp of the note creation. Specify only if you want "
                 "to override the default (current datetime)."
             ),
             examples=[datetime.fromisoformat("2022-02-09T22:52:36+01:00")],
@@ -435,7 +436,90 @@ async def create_note(
         response = await client.post(
             "/etapi/create-note",
             json=params.model_dump(
-                by_alias=True, exclude_none=True, mode="json"),
+                by_alias=True, exclude_none=True, mode="json"
+            ),
         )
         response.raise_for_status()
         return NoteWithBranch.model_validate(response.json())
+
+
+@mcp.tool(
+    name="update_note_metadata",
+    description="Update a note identified by the noteId with changes in the body",
+    annotations=ToolAnnotations(readOnlyHint=False),
+    tags={"update"}
+)
+async def update_note_metadata(
+    note_id: Annotated[
+        str,
+        Field(
+            description="The note id to patch the metadata",
+            examples=["evnnmvHTCgIn"],
+            pattern="[a-zA-Z0-9_]{4,32}",
+        ),
+    ],
+    title: Annotated[
+        str | None,
+        Field(
+            description=(
+                "The note title"
+            ),
+            examples=["Cruzeiro maior de Minas"],
+        ),
+    ] = None,
+    note_type: Annotated[
+        NoteType | None,
+        Field(
+            description="Note type",
+            examples=["text", "file"]
+        ),
+    ] = None,
+    mime: Annotated[
+        str | None,
+        Field(
+            description=(
+                "Note mime. This needs to be specified "
+                "only for note types 'code', 'file', 'image'."
+            ),
+            examples=["application/json"]
+        ),
+    ] = None,
+    date_created:  Annotated[
+        datetime | None,
+        Field(
+            description=(
+                "Local timestamp of the note creation. "
+                "Specify only if you want to override "
+                "the default (current datetime in the "
+                "current timezone/offset)."
+            ),
+            examples=[datetime.fromisoformat("2022-02-09T22:52:36+01:00")],
+        ),
+    ] = None,
+    utc_date_created:  Annotated[
+        datetime | None,
+        Field(
+            description=(
+                "UTC timestamp of the note creation. Specify only if you want "
+                "to override the default (current datetime)."
+            ),
+            examples=[datetime.fromisoformat("2022-02-09T22:52:36+01:00")],
+        ),
+    ] = None,
+) -> Note:
+    async with get_client() as client:
+        params = UpdateNoteParams(
+            title=title,
+            type=note_type,
+            mime=mime,
+            date_created=date_created,
+            utc_date_created=utc_date_created,
+        )
+        response = await client.patch(
+            f"/etapi/notes/{note_id}",
+            json=params.model_dump(
+                by_alias=True, exclude_none=True, mode="json"
+            )
+        )
+        response.raise_for_status()
+        return Note.model_validate(response.json())
