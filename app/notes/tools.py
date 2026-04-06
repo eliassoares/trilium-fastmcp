@@ -523,3 +523,35 @@ async def update_note_metadata(
         )
         response.raise_for_status()
         return Note.model_validate(response.json())
+
+
+@mcp.tool(
+    name="update_note_content",
+    description="Updates note content identified by its ID",
+    annotations=ToolAnnotations(readOnlyHint=False),
+    tags={"update"},
+)
+async def update_note_content(
+    note_id: Annotated[
+        str,
+        Field(
+            description="The note id to update the note content",
+            examples=["evnnmvHTCgIn"],
+            pattern="[a-zA-Z0-9_]{4,32}",
+        ),
+    ],
+    content: Annotated[
+        str,
+        Field(
+            description="Note content (HTML)",
+            examples=["<p>CRU 6 x 1 ATL</p>"],
+        ),
+    ],
+) -> None:
+    async with get_client() as client:
+        response = await client.put(
+            f"/etapi/notes/{note_id}/content",
+            content=content.encode(),
+            headers={"Content-Type": "text/plain"},
+        )
+        response.raise_for_status()

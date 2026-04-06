@@ -18,7 +18,7 @@ This project exposes Trilium's [ETAPI](https://docs.triliumnotes.org/user-guide/
 - [x] `PATCH /etapi/notes/:noteId` — update note metadata
 - [ ] `DELETE /etapi/notes/:noteId` — delete a note
 - [x] `GET /etapi/notes/:noteId/content` — get note content
-- [ ] `PUT /etapi/notes/:noteId/content` — update note content
+- [x] `PUT /etapi/notes/:noteId/content` — update note content
 - [x] `GET /etapi/notes/:noteId/export` — export a note
 - [ ] `POST /etapi/notes/:noteId/import` — import into a note
 - [ ] `POST /etapi/notes/:noteId/revision` — create a note revision

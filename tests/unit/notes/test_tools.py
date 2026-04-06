@@ -11,6 +11,7 @@ from app.notes.tools import (
     get_note,
     get_note_content,
     search_notes,
+    update_note_content,
     update_note_metadata,
 )
 from tests.unit.conftest import TRILIUM_URL
@@ -290,3 +291,47 @@ async def test_update_note_metadata_raises_on_unauthorized() -> None:
 
     with pytest.raises(httpx.HTTPStatusError):
         await update_note_metadata(note_id="evnnmvHTCgIn", title="New Title")
+
+
+@respx.mock
+async def test_update_note_content_sends_plain_text() -> None:
+    request = respx.put(f"{TRILIUM_URL}/etapi/notes/evnnmvHTCgIn/content").mock(
+        return_value=httpx.Response(204)
+    )
+
+    await update_note_content(note_id="evnnmvHTCgIn", content="<p>Hello</p>")
+
+    assert request.called
+    assert request.calls.last.request.content == b"<p>Hello</p>"
+    assert request.calls.last.request.headers["content-type"] == "text/plain"
+
+
+@respx.mock
+async def test_update_note_content_returns_none() -> None:
+    respx.put(f"{TRILIUM_URL}/etapi/notes/evnnmvHTCgIn/content").mock(
+        return_value=httpx.Response(204)
+    )
+
+    result = await update_note_content(note_id="evnnmvHTCgIn", content="<p>Hello</p>")
+
+    assert result is None
+
+
+@respx.mock
+async def test_update_note_content_raises_on_not_found() -> None:
+    respx.put(f"{TRILIUM_URL}/etapi/notes/nonexistent/content").mock(
+        return_value=httpx.Response(404)
+    )
+
+    with pytest.raises(httpx.HTTPStatusError):
+        await update_note_content(note_id="nonexistent", content="<p>Hello</p>")
+
+
+@respx.mock
+async def test_update_note_content_raises_on_unauthorized() -> None:
+    respx.put(f"{TRILIUM_URL}/etapi/notes/evnnmvHTCgIn/content").mock(
+        return_value=httpx.Response(401)
+    )
+
+    with pytest.raises(httpx.HTTPStatusError):
+        await update_note_content(note_id="evnnmvHTCgIn", content="<p>Hello</p>")
