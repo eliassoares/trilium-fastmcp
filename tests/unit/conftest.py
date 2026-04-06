@@ -1,13 +1,15 @@
 import pytest
 
+from app.config import settings
+
 TRILIUM_URL = "http://trilium:8080"
 TRILIUM_TOKEN = "test-token"
 
 
 @pytest.fixture(autouse=True)
 def trilium_env(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setenv("TRILIUM_URL", TRILIUM_URL)
-    monkeypatch.setenv("TRILIUM_TOKEN", TRILIUM_TOKEN)
+    monkeypatch.setattr(settings, "trilium_url", TRILIUM_URL)
+    monkeypatch.setattr(settings, "trilium_token", TRILIUM_TOKEN)
 
 
 @pytest.fixture
@@ -44,6 +46,25 @@ def note_with_branch_response(note_response: dict[str, object]) -> dict[str, obj
             "isExpanded": False,
             "utcDateModified": "2022-03-07T21:54:25.277Z",
         },
+    }
+
+
+@pytest.fixture
+def revision_response() -> dict[str, object]:
+    return {
+        "revisionId": "yujrHQa6XfFI",
+        "noteId": "evnnmvHTCgIn",
+        "type": "text",
+        "mime": "text/html",
+        "isProtected": False,
+        "title": "My Note",
+        "blobId": "DecH36BK5cLX6dYDg5yx",
+        "dateLastEdited": "2022-02-09T22:52:36+01:00",
+        "dateCreated": "2022-02-09T22:52:36+01:00",
+        "utcDateLastEdited": "2022-03-07T21:54:25.277Z",
+        "utcDateCreated": "2022-03-07T21:54:25.277Z",
+        "utcDateModified": "2022-03-07T21:54:25.277Z",
+        "contentLength": 584,
     }
 
 

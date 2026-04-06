@@ -22,6 +22,8 @@ from app.notes.schemas import (
     SearchNotesResponse,
 )
 
+from app.revision.schemas import Revision
+
 logger = logging.getLogger(__name__)
 
 
@@ -266,6 +268,27 @@ async def get_note_history(
         )
         response.raise_for_status()
         return [NoteRecentChange.model_validate(item) for item in response.json()]
+
+
+@mcp.tool(
+    name="get_note_revisions",
+    description="Returns all revisions for a note identified by its ID",
+    annotations=ToolAnnotations(readOnlyHint=True)
+)
+async def get_note_revisions(
+    note_id: Annotated[
+        str,
+        Field(
+            description="A note id to retrieve the revisions",
+            examples=["evnnmvHTCgIn"],
+            pattern="[a-zA-Z0-9_]{4,32}",
+        ),
+    ]
+) -> list[Revision]:
+    async with get_client() as client:
+        response = await client.get(f"/etapi/notes/{note_id}/revisions")
+        response.raise_for_status()
+        return [Revision.model_validate(item) for item in response.json()]
 
 
 @mcp.tool(
