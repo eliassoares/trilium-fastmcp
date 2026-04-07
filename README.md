@@ -20,8 +20,7 @@ This project exposes Trilium's [ETAPI](https://docs.triliumnotes.org/user-guide/
 - [x] `GET /etapi/notes/:noteId/content` — get note content
 - [x] `PUT /etapi/notes/:noteId/content` — update note content
 - [x] `GET /etapi/notes/:noteId/export` — export a note
-- [ ] `POST /etapi/notes/:noteId/import` — import into a note
-- [ ] `POST /etapi/notes/:noteId/revision` — create a note revision
+- [x] `POST /etapi/notes/:noteId/revision` — create a note revision
 - [x] `GET /etapi/notes/:noteId/attachments` — list note attachments
 - [x] `GET /etapi/notes/history` — get note history
 - [x] `GET /etapi/notes/:noteId/revisions` — list note revisions

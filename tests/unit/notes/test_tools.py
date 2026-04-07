@@ -7,6 +7,7 @@ import respx
 from app.notes.schemas import NoteExportType, NoteType
 from app.notes.tools import (
     create_note,
+    create_note_revision,
     export_note,
     get_note,
     get_note_content,
@@ -335,3 +336,60 @@ async def test_update_note_content_raises_on_unauthorized() -> None:
 
     with pytest.raises(httpx.HTTPStatusError):
         await update_note_content(note_id="evnnmvHTCgIn", content="<p>Hello</p>")
+
+
+@respx.mock
+async def test_create_note_revision_returns_success() -> None:
+    request = respx.post(
+        f"{TRILIUM_URL}/etapi/notes/evnnmvHTCgIn/revision"
+    ).mock(return_value=httpx.Response(204))
+
+    result = await create_note_revision(note_id="evnnmvHTCgIn")
+
+    assert result == "Revision created successfully"
+    assert request.called
+
+
+@respx.mock
+async def test_create_note_revision_passes_default_format() -> None:
+    request = respx.post(
+        f"{TRILIUM_URL}/etapi/notes/evnnmvHTCgIn/revision"
+    ).mock(return_value=httpx.Response(204))
+
+    await create_note_revision(note_id="evnnmvHTCgIn")
+
+    assert request.calls.last.request.url.params["format"] == "html"
+
+
+@respx.mock
+async def test_create_note_revision_passes_custom_format() -> None:
+    request = respx.post(
+        f"{TRILIUM_URL}/etapi/notes/evnnmvHTCgIn/revision"
+    ).mock(return_value=httpx.Response(204))
+
+    await create_note_revision(
+        note_id="evnnmvHTCgIn",
+        revision_format=NoteExportType.markdown,
+    )
+
+    assert request.calls.last.request.url.params["format"] == "markdown"
+
+
+@respx.mock
+async def test_create_note_revision_raises_on_not_found() -> None:
+    respx.post(
+        f"{TRILIUM_URL}/etapi/notes/nonexistent/revision"
+    ).mock(return_value=httpx.Response(404))
+
+    with pytest.raises(httpx.HTTPStatusError):
+        await create_note_revision(note_id="nonexistent")
+
+
+@respx.mock
+async def test_create_note_revision_raises_on_unauthorized() -> None:
+    respx.post(
+        f"{TRILIUM_URL}/etapi/notes/evnnmvHTCgIn/revision"
+    ).mock(return_value=httpx.Response(401))
+
+    with pytest.raises(httpx.HTTPStatusError):
+        await create_note_revision(note_id="evnnmvHTCgIn")

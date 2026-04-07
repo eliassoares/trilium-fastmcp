@@ -555,3 +555,35 @@ async def update_note_content(
             headers={"Content-Type": "text/plain"},
         )
         response.raise_for_status()
+
+
+@mcp.tool(
+    name="create_note_revision",
+    description="Create a note revision for the given note",
+    annotations=ToolAnnotations(readOnlyHint=False),
+    tags={"update"},
+)
+async def create_note_revision(
+    note_id: Annotated[
+        str,
+        Field(
+            description="The note id to create the revision",
+            examples=["evnnmvHTCgIn"],
+            pattern="[a-zA-Z0-9_]{4,32}",
+        ),
+    ],
+    revision_format: Annotated[
+        NoteExportType,
+        Field(
+            description="The note revision format. Default: html",
+            examples=[NoteExportType.html.value],
+        ),
+    ] = NoteExportType.html,
+) -> str:
+    async with get_client() as client:
+        response = await client.post(
+            f"/etapi/notes/{note_id}/revision",
+            params={"format": revision_format.value},
+        )
+        response.raise_for_status()
+        return "Revision created successfully"
