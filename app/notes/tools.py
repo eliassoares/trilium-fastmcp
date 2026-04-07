@@ -611,3 +611,27 @@ async def delete_note(
         )
         response.raise_for_status()
     return "Note deleted successfully"
+
+
+@mcp.tool(
+    name="undelete_note",
+    description="Restore a deleted note. The note must be deleted and must have at least one undeleted parent",
+    annotations=ToolAnnotations(readOnlyHint=False),
+    tags={"update"}
+)
+async def undelete_note(
+    note_id: Annotated[
+        str,
+        Field(
+            description="The note id to undelete it",
+            examples=["evnnmvHTCgIn"],
+            pattern="[a-zA-Z0-9_]{4,32}",
+        ),
+    ],
+) -> str:
+    async with get_client() as client:
+        response = await client.post(
+            f"/etapi/notes/{note_id}/undelete"
+        )
+        response.raise_for_status()
+    return "Note restored successfully"

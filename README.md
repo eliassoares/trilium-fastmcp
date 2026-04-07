@@ -24,7 +24,7 @@ This project exposes Trilium's [ETAPI](https://docs.triliumnotes.org/user-guide/
 - [x] `GET /etapi/notes/:noteId/attachments` — list note attachments
 - [x] `GET /etapi/notes/history` — get note history
 - [x] `GET /etapi/notes/:noteId/revisions` — list note revisions
-- [ ] `POST /etapi/notes/:noteId/undelete` — undelete a note
+- [x] `POST /etapi/notes/:noteId/undelete` — undelete a note
 
 ### Branches
 

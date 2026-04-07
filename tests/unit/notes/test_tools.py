@@ -13,6 +13,7 @@ from app.notes.tools import (
     get_note,
     get_note_content,
     search_notes,
+    undelete_note,
     update_note_content,
     update_note_metadata,
 )
@@ -426,3 +427,35 @@ async def test_delete_note_raises_on_unauthorized() -> None:
 
     with pytest.raises(httpx.HTTPStatusError):
         await delete_note(note_id="evnnmvHTCgIn")
+
+
+@respx.mock
+async def test_undelete_note_returns_success() -> None:
+    request = respx.post(f"{TRILIUM_URL}/etapi/notes/evnnmvHTCgIn/undelete").mock(
+        return_value=httpx.Response(200)
+    )
+
+    result = await undelete_note(note_id="evnnmvHTCgIn")
+
+    assert result == "Note restored successfully"
+    assert request.called
+
+
+@respx.mock
+async def test_undelete_note_raises_on_not_found() -> None:
+    respx.post(f"{TRILIUM_URL}/etapi/notes/nonexistent/undelete").mock(
+        return_value=httpx.Response(404)
+    )
+
+    with pytest.raises(httpx.HTTPStatusError):
+        await undelete_note(note_id="nonexistent")
+
+
+@respx.mock
+async def test_undelete_note_raises_on_unauthorized() -> None:
+    respx.post(f"{TRILIUM_URL}/etapi/notes/evnnmvHTCgIn/undelete").mock(
+        return_value=httpx.Response(401)
+    )
+
+    with pytest.raises(httpx.HTTPStatusError):
+        await undelete_note(note_id="evnnmvHTCgIn")
