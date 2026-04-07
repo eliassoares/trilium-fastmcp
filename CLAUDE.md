@@ -10,14 +10,14 @@ MCP (Model Context Protocol) server for Trilium Notes, exposing the ETAPI as MCP
 app/
 ├── __init__.py      # FastMCP instance (mcp)
 ├── main.py          # Server entrypoint — side-effect imports tool modules + runs mcp
-├── config.py        # Env vars (HOST, PORT, TRILIUM_URL, TRILIUM_TOKEN, UPDATING_DISABLED)
+├── config.py        # Env vars (HOST, PORT, TRILIUM_URL, TRILIUM_TOKEN, UPDATING_DISABLED, DELETING_DISABLED)
 ├── client.py        # httpx AsyncClient with get_client() context manager
 ├── general/
 │   ├── schemas.py   # AppInfoResponse
 │   └── tools.py     # get_application_information
 ├── notes/
 │   ├── schemas.py   # Note, Attribute, Branch, NoteWithBranch, CreateNoteParams, UpdateNoteParams, SearchNotesParams, SearchNotesResponse, enums
-│   └── tools.py     # search_notes, get_note, get_note_content, export_note, create_note, get_note_attachments, get_note_history, get_note_revisions, update_note_metadata, update_note_content
+│   └── tools.py     # search_notes, get_note, get_note_content, export_note, create_note, get_note_attachments, get_note_history, get_note_revisions, update_note_metadata, update_note_content, create_note_revision, delete_note, undelete_note
 └── revision/
     └── schemas.py   # Revision
 ```
@@ -68,6 +68,7 @@ make clean         # Remove caches and build artifacts
 | `HOST` | `127.0.0.1` | Server bind address (`0.0.0.0` in Docker) |
 | `PORT` | `6969` | Server port |
 | `UPDATING_DISABLED` | `true` | When `true`, disables all tools tagged `{"update"}` at startup |
+| `DELETING_DISABLED` | `true` | When `true`, disables all tools tagged `{"delete"}` at startup |
 
 ## mypy Notes
 

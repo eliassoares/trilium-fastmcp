@@ -96,6 +96,7 @@ Set the following environment variables (or create a `.env` file):
 | `HOST` | `127.0.0.1` | Server bind address |
 | `PORT` | `6969` | Server port |
 | `UPDATING_DISABLED` | `true` | When `true`, disables all write tools at startup |
+| `DELETING_DISABLED` | `true` | When `true`, disables all delete tools at startup |
 
 ## Running
 
