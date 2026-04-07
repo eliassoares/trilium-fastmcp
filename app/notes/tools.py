@@ -587,3 +587,27 @@ async def create_note_revision(
         )
         response.raise_for_status()
         return "Revision created successfully"
+
+
+@mcp.tool(
+    name="delete_note",
+    description="Deletes a single note based on the noteId supplied",
+    annotations=ToolAnnotations(destructiveHint=True),
+    tags={"delete"}
+)
+async def delete_note(
+        note_id: Annotated[
+        str,
+        Field(
+            description="The note id to delete it",
+            examples=["evnnmvHTCgIn"],
+            pattern="[a-zA-Z0-9_]{4,32}",
+        ),
+        ],
+) -> str:
+    async with get_client() as client:
+        response = await client.delete(
+            f"/etapi/notes/{note_id}"
+        )
+        response.raise_for_status()
+    return "Note deleted successfully"

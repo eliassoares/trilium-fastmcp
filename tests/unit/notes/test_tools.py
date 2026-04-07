@@ -8,6 +8,7 @@ from app.notes.schemas import NoteExportType, NoteType
 from app.notes.tools import (
     create_note,
     create_note_revision,
+    delete_note,
     export_note,
     get_note,
     get_note_content,
@@ -393,3 +394,35 @@ async def test_create_note_revision_raises_on_unauthorized() -> None:
 
     with pytest.raises(httpx.HTTPStatusError):
         await create_note_revision(note_id="evnnmvHTCgIn")
+
+
+@respx.mock
+async def test_delete_note_returns_success() -> None:
+    request = respx.delete(f"{TRILIUM_URL}/etapi/notes/evnnmvHTCgIn").mock(
+        return_value=httpx.Response(200)
+    )
+
+    result = await delete_note(note_id="evnnmvHTCgIn")
+
+    assert result == "Note deleted successfully"
+    assert request.called
+
+
+@respx.mock
+async def test_delete_note_raises_on_not_found() -> None:
+    respx.delete(f"{TRILIUM_URL}/etapi/notes/nonexistent").mock(
+        return_value=httpx.Response(404)
+    )
+
+    with pytest.raises(httpx.HTTPStatusError):
+        await delete_note(note_id="nonexistent")
+
+
+@respx.mock
+async def test_delete_note_raises_on_unauthorized() -> None:
+    respx.delete(f"{TRILIUM_URL}/etapi/notes/evnnmvHTCgIn").mock(
+        return_value=httpx.Response(401)
+    )
+
+    with pytest.raises(httpx.HTTPStatusError):
+        await delete_note(note_id="evnnmvHTCgIn")

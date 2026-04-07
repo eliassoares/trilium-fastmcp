@@ -12,4 +12,8 @@ if __name__ == "__main__":
         logger.warning("Update tools are disabled!")
         mcp.disable(tags={"update"})
 
+    if settings.deleting_disabled:
+        logger.warning("Delete tools are disabled!")
+        mcp.disable(tags={"delete"})
+
     mcp.run(transport="http", host=settings.host, port=settings.port)

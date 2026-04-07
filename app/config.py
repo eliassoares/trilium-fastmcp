@@ -8,6 +8,7 @@ class Settings(BaseSettings):
     trilium_url: str | None = None
 
     updating_disabled: bool = True
+    deleting_disabled: bool = True
 
 
 settings = Settings()
