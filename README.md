@@ -108,6 +108,39 @@ make run
 
 The MCP Inspector is available at `http://localhost:6274`. Use `http://trilium-fastmcp:6969/mcp` as the server URL inside the inspector.
 
+## Client Configuration
+
+### Claude Code
+
+Add to `~/.claude/settings.json`:
+
+```json
+{
+  "mcpServers": {
+    "trilium": {
+      "url": "http://<your-server-ip>:6969/mcp"
+    }
+  }
+}
+```
+
+### Claude Desktop
+
+Add to `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS):
+
+```json
+{
+  "mcpServers": {
+    "trilium": {
+      "command": "npx",
+      "args": ["-y", "mcp-remote", "http://<your-server-ip>:6969/mcp", "--allow-http"]
+    }
+  }
+}
+```
+
+> **Note:** Claude Desktop requires [mcp-remote](https://www.npmjs.com/package/mcp-remote) to connect to HTTP servers (needs Node.js). The `--allow-http` flag is required for non-HTTPS URLs.
+
 ## Development
 
 ```bash
