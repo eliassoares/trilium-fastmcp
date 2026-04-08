@@ -1,6 +1,7 @@
 import logging
 import app.general.tools
 import app.notes.tools
+import app.revision.tools
 from app import mcp
 from app.config import settings
 

@@ -69,7 +69,7 @@ This project exposes Trilium's [ETAPI](https://docs.triliumnotes.org/user-guide/
 
 ### Revisions
 
-- [ ] `GET /etapi/revisions/:revisionId` — get revision by ID
+- [x] `GET /etapi/revisions/:revisionId` — get revision by ID
 - [ ] `GET /etapi/revisions/:revisionId/content` — get revision content
 
 ## Setup

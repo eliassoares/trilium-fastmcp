@@ -63,8 +63,8 @@ class Revision(BaseModel):
         description="UTC timestamp of the last modification in the database",
         examples=[datetime.fromisoformat("2022-03-07T21:54:25.277+00:00")],
     )
-    content_length: int = Field(
-        ...,
+    content_length: int | None = Field(
+        None,
         description="Size of the revision content in bytes",
         examples=[204800],
     )
