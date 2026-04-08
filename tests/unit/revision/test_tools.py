@@ -3,7 +3,7 @@ import pytest
 import respx
 
 from app.notes.tools import get_note_revisions
-from app.revision.tools import get_revision
+from app.revision.tools import get_revision, get_revision_content
 from tests.unit.conftest import TRILIUM_URL
 
 
@@ -117,3 +117,35 @@ async def test_get_revision_raises_on_unauthorized() -> None:
 
     with pytest.raises(httpx.HTTPStatusError):
         await get_revision(revision_id="yujrHQa6XfFI")
+
+
+@respx.mock
+async def test_get_revision_content_returns_text() -> None:
+    html = "<p>Hello world</p>"
+    respx.get(f"{TRILIUM_URL}/etapi/revisions/yujrHQa6XfFI/content").mock(
+        return_value=httpx.Response(200, content=html.encode())
+    )
+
+    result = await get_revision_content(revision_id="yujrHQa6XfFI")
+
+    assert result == html
+
+
+@respx.mock
+async def test_get_revision_content_raises_on_not_found() -> None:
+    respx.get(f"{TRILIUM_URL}/etapi/revisions/nonexistent/content").mock(
+        return_value=httpx.Response(404)
+    )
+
+    with pytest.raises(httpx.HTTPStatusError):
+        await get_revision_content(revision_id="nonexistent")
+
+
+@respx.mock
+async def test_get_revision_content_raises_on_unauthorized() -> None:
+    respx.get(f"{TRILIUM_URL}/etapi/revisions/yujrHQa6XfFI/content").mock(
+        return_value=httpx.Response(401)
+    )
+
+    with pytest.raises(httpx.HTTPStatusError):
+        await get_revision_content(revision_id="yujrHQa6XfFI")
