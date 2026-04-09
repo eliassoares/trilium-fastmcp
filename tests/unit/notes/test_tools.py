@@ -4,8 +4,8 @@ import httpx
 import pytest
 import respx
 
-from app.notes.schemas import NoteExportType, NoteType
-from app.notes.tools import (
+from app.note.schemas import NoteExportType, NoteType
+from app.note.tools import (
     create_note,
     create_note_revision,
     delete_note,

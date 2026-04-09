@@ -1,7 +1,7 @@
 from pydantic import BaseModel, ConfigDict
 from pydantic.alias_generators import to_camel
 
-from app.notes.schemas import AttributeType
+from app.note.schemas import AttributeType
 
 
 class CreateAttributeParams(BaseModel):

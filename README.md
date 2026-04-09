@@ -28,7 +28,7 @@ This project exposes Trilium's [ETAPI](https://docs.triliumnotes.org/user-guide/
 
 ### Branches
 
-- [ ] `GET /etapi/branches/:branchId` — get branch by ID
+- [x] `GET /etapi/branches/:branchId` — get branch by ID
 - [ ] `POST /etapi/branches` — create a branch
 - [ ] `PATCH /etapi/branches/:branchId` — update a branch
 - [ ] `DELETE /etapi/branches/:branchId` — delete a branch
@@ -49,11 +49,6 @@ This project exposes Trilium's [ETAPI](https://docs.triliumnotes.org/user-guide/
 - [ ] `GET /etapi/attachments/:attachmentId/content` — get attachment content
 - [ ] `PUT /etapi/attachments/:attachmentId/content` — update attachment content
 - [ ] `DELETE /etapi/attachments/:attachmentId` — delete an attachment
-
-### Auth
-
-- [ ] `POST /etapi/auth/login` — login
-- [ ] `POST /etapi/auth/logout` — logout / invalidate token
 
 ### Backup
 

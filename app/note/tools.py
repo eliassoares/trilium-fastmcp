@@ -8,7 +8,7 @@ from pydantic import Field
 
 from app import mcp
 from app.client import get_client
-from app.notes.schemas import (
+from app.note.schemas import (
     CreateNoteParams,
     Note,
     NoteAttachment,

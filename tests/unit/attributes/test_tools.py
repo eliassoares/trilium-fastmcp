@@ -10,7 +10,7 @@ from app.attributes.tools import (
     get_attribute,
     update_attribute,
 )
-from app.notes.schemas import AttributeType
+from app.note.schemas import AttributeType
 from tests.unit.conftest import TRILIUM_URL
 
 
@@ -91,4 +91,3 @@ async def test_delete_attribute_returns_success() -> None:
     result = await delete_attribute(attribute_id="attr1234")
 
     assert result == "Attribute deleted successfully"
-

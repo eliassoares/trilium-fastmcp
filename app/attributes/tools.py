@@ -7,7 +7,7 @@ from pydantic import Field
 from app import mcp
 from app.attributes.schemas import CreateAttributeParams, UpdateAttributeParams
 from app.client import get_client
-from app.notes.schemas import Attribute, AttributeType
+from app.note.schemas import Attribute, AttributeType
 
 logger = logging.getLogger(__name__)
 

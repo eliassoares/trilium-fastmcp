@@ -11,7 +11,7 @@ from app.client import get_client, get_web_client
 from app.clipper.extractor import extract_page
 from app.clipper.schemas import ClipResult
 from app.clipper.security import SSRFError, validate_url_for_fetch
-from app.notes.schemas import (
+from app.note.schemas import (
     CreateNoteParams,
     NoteType,
     NoteWithBranch,

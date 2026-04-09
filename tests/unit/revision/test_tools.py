@@ -2,7 +2,7 @@ import httpx
 import pytest
 import respx
 
-from app.notes.tools import get_note_revisions
+from app.note.tools import get_note_revisions
 from app.revision.tools import get_revision, get_revision_content
 from tests.unit.conftest import TRILIUM_URL
 

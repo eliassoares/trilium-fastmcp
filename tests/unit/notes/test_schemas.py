@@ -3,7 +3,7 @@ from datetime import datetime
 import pytest
 from pydantic import ValidationError
 
-from app.notes.schemas import (
+from app.note.schemas import (
     Attribute,
     AttributeType,
     Note,

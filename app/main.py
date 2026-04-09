@@ -1,9 +1,10 @@
 import logging
 
 import app.attributes.tools
+import app.branch.tools
 import app.clipper.tools
 import app.general.tools
-import app.notes.tools
+import app.note.tools
 import app.revision.tools
 from app import mcp
 from app.config import settings
