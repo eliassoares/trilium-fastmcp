@@ -10,5 +10,8 @@ class Settings(BaseSettings):
     updating_disabled: bool = True
     deleting_disabled: bool = True
 
+    mcp_auth_token: str | None = None
+    mcp_client_id: str | None = None
+
 
 settings = Settings()
