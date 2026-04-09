@@ -20,9 +20,8 @@ from app.notes.schemas import (
     NoteWithBranch,
     SearchNotesParams,
     SearchNotesResponse,
-    UpdateNoteParams
+    UpdateNoteParams,
 )
-
 from app.revision.schemas import Revision
 
 logger = logging.getLogger(__name__)

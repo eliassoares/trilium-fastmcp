@@ -1,4 +1,5 @@
 from fastmcp import FastMCP
+
 from app.config import settings
 
 if settings.mcp_auth_token and settings.mcp_client_id:

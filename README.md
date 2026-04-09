@@ -36,10 +36,10 @@ This project exposes Trilium's [ETAPI](https://docs.triliumnotes.org/user-guide/
 
 ### Attributes
 
-- [ ] `GET /etapi/attributes/:attributeId` — get attribute by ID
-- [ ] `POST /etapi/attributes` — create an attribute
-- [ ] `PATCH /etapi/attributes/:attributeId` — update an attribute
-- [ ] `DELETE /etapi/attributes/:attributeId` — delete an attribute
+- [x] `GET /etapi/attributes/:attributeId` — get attribute by ID
+- [x] `POST /etapi/attributes` — create an attribute
+- [x] `PATCH /etapi/attributes/:attributeId` — update an attribute
+- [x] `DELETE /etapi/attributes/:attributeId` — delete an attribute
 
 ### Attachments
 
@@ -149,6 +149,31 @@ Then add them to your `.env` file:
 MCP_AUTH_TOKEN=<generated-token>
 MCP_CLIENT_ID=<generated-client-id>
 ```
+
+## Web Clipper
+
+The web clipper logic in this project was implemented with AI assistance and was based on the ideas and behavior from [`zadam/trilium-web-clipper`](https://github.com/zadam/trilium-web-clipper).
+
+### Parent note behavior
+
+When a `parent_note_id` is provided, the clipped page is saved under that note.
+
+When no `parent_note_id` is provided, the server looks for a note named `Web Clipper` directly under `root`. If it does not exist, the server creates that note automatically and saves the clipped page there.
+
+### Use case example
+
+Example instruction to an MCP client:
+
+```text
+save this page https://eliassoares.com/2019/mova-se on KfLcNMe8YAMg note
+```
+
+That should call the clipping flow with:
+
+- `url = "https://eliassoares.com/2019/mova-se"`
+- `parent_note_id = "KfLcNMe8YAMg"`
+
+If you omit the destination note, the clip will be saved under the `Web Clipper` note instead.
 
 ## Client Configuration
 

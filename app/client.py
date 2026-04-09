@@ -28,3 +28,25 @@ def _build_client() -> httpx.AsyncClient:
 async def get_client() -> AsyncGenerator[httpx.AsyncClient]:
     async with _build_client() as client:
         yield client
+
+
+@asynccontextmanager
+async def get_web_client() -> AsyncGenerator[httpx.AsyncClient]:
+    """HTTP client for fetching external URLs (no Trilium auth)."""
+    async with httpx.AsyncClient(
+        timeout=httpx.Timeout(connect=5.0, read=30.0, write=5.0, pool=5.0),
+        headers={
+            "User-Agent": (
+                "Mozilla/5.0 (compatible; trilium-fastmcp/1.0; "
+                "+https://github.com)"
+            ),
+            "Accept": (
+                "text/html,application/xhtml+xml,"
+                "application/xml;q=0.9,*/*;q=0.8"
+            ),
+            "Accept-Language": "en-US,en;q=0.5",
+        },
+        follow_redirects=True,
+        max_redirects=5,
+    ) as client:
+        yield client

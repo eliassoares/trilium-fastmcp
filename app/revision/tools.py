@@ -1,9 +1,11 @@
+from typing import Annotated
+
+from mcp.types import ToolAnnotations
+from pydantic import Field
+
 from app import mcp
 from app.client import get_client
 from app.revision.schemas import Revision
-from typing import Annotated
-from mcp.types import ToolAnnotations
-from pydantic import Field
 
 
 @mcp.tool(

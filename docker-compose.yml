@@ -7,9 +7,6 @@ services:
     image: trilium-fastmcp
     env_file:
       - .env
-    volumes:
-      - .:/app
-      - /app/.venv
     environment:
       - HOST=0.0.0.0
       - PORT=6969

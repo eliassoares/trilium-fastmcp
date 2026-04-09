@@ -9,11 +9,11 @@ WORKDIR /app
 
 COPY pyproject.toml uv.lock ./
 
-RUN --mount=type=cache,target=/root/.cache uv sync --locked --no-dev --no-install-project
+RUN uv sync --locked --no-dev --no-install-project
 
 COPY . .
 
-RUN --mount=type=cache,target=/root/.cache uv sync --locked --no-dev
+RUN uv sync --locked --no-dev
 
 FROM python:3.13-alpine3.23 AS production
 
