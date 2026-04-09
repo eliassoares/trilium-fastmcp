@@ -8,9 +8,9 @@ MCP (Model Context Protocol) server for Trilium Notes, exposing the ETAPI as MCP
 
 ```
 app/
-├── __init__.py      # FastMCP instance (mcp)
+├── __init__.py      # FastMCP instance (mcp) — conditional auth via StaticTokenVerifier
 ├── main.py          # Server entrypoint — side-effect imports tool modules + runs mcp
-├── config.py        # Env vars (HOST, PORT, TRILIUM_URL, TRILIUM_TOKEN, UPDATING_DISABLED, DELETING_DISABLED)
+├── config.py        # Env vars (HOST, PORT, TRILIUM_URL, TRILIUM_TOKEN, UPDATING_DISABLED, DELETING_DISABLED, MCP_AUTH_TOKEN, MCP_CLIENT_ID)
 ├── client.py        # httpx AsyncClient with get_client() context manager
 ├── general/
 │   ├── schemas.py   # AppInfoResponse
@@ -69,6 +69,8 @@ make clean         # Remove caches and build artifacts
 | `PORT` | `6969` | Server port |
 | `UPDATING_DISABLED` | `true` | When `true`, disables all tools tagged `{"update"}` at startup |
 | `DELETING_DISABLED` | `true` | When `true`, disables all tools tagged `{"delete"}` at startup |
+| `MCP_AUTH_TOKEN` | — | Optional. Static bearer token for MCP server auth |
+| `MCP_CLIENT_ID` | — | Optional. Client ID (required with `MCP_AUTH_TOKEN`) |
 
 ## mypy Notes
 
@@ -80,6 +82,7 @@ make clean         # Remove caches and build artifacts
 - `pygments 2.19.2` has CVE-2026-4539 (no fix yet) — ignored via `pip-audit --ignore-vuln CVE-2026-4539`
 - MCP Inspector: use `http://trilium-fastmcp:6969/mcp` as server URL (not `127.0.0.1`)
 - Docker needs `PYTHONPATH=/app` to resolve `app.*` imports when running `python app/main.py`
+- Claude Code ignores `Authorization` headers on HTTP transport ([#7290](https://github.com/anthropics/claude-code/issues/7290)) — use `mcp-remote` as stdio bridge for auth
 
 ## Dependencies
 

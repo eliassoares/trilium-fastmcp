@@ -97,6 +97,8 @@ Set the following environment variables (or create a `.env` file):
 | `PORT` | `6969` | Server port |
 | `UPDATING_DISABLED` | `true` | When `true`, disables all write tools at startup |
 | `DELETING_DISABLED` | `true` | When `true`, disables all delete tools at startup |
+| `MCP_AUTH_TOKEN` | — | Optional. Static bearer token to protect the MCP server |
+| `MCP_CLIENT_ID` | — | Optional. Client identifier (required if `MCP_AUTH_TOKEN` is set) |
 
 ## Running
 
@@ -108,25 +110,90 @@ make run
 
 The MCP Inspector is available at `http://localhost:6274`. Use `http://trilium-fastmcp:6969/mcp` as the server URL inside the inspector.
 
+## Safety Defaults
+
+By default, both update and delete tools are **disabled** at startup. This prevents accidental modifications to your Trilium notes. To enable them, set the following environment variables:
+
+```bash
+UPDATING_DISABLED=false  # Enable update tools (update note metadata, content, etc.)
+DELETING_DISABLED=false  # Enable delete tools (delete notes)
+```
+
+Only enable these if you trust the LLM and have reviewed how the tools work.
+
+## Authentication
+
+Since Trilium's own ETAPI uses a simple token-based authentication, we chose to keep the MCP server authentication equally simple — no OAuth, no JWT infrastructure required. The server uses a static bearer token via FastMCP's `StaticTokenVerifier`.
+
+When `MCP_AUTH_TOKEN` and `MCP_CLIENT_ID` are both set, the server requires an `Authorization: Bearer <token>` header on all requests. When unset, the server runs without authentication.
+
+**We recommend enabling authentication if your MCP server is accessible externally** (i.e., not just `localhost`).
+
+### Generating tokens
+
+You can generate secure tokens with Python:
+
+```bash
+python3 -c "import secrets; print(secrets.token_urlsafe(32))"
+```
+
+Or with OpenSSL:
+
+```bash
+openssl rand -base64 32
+```
+
+Then add them to your `.env` file:
+
+```bash
+MCP_AUTH_TOKEN=<generated-token>
+MCP_CLIENT_ID=<generated-client-id>
+```
+
 ## Client Configuration
 
 ### Claude Code
 
-Add to `~/.claude/settings.json`:
+Add to `.mcp.json` (project-level) or `~/.claude/settings.json` (global):
+
+**Without authentication:**
 
 ```json
 {
   "mcpServers": {
     "trilium": {
+      "type": "http",
       "url": "http://<your-server-ip>:6969/mcp"
     }
   }
 }
 ```
 
+**With authentication** (requires [mcp-remote](https://www.npmjs.com/package/mcp-remote) + Node.js):
+
+```json
+{
+  "mcpServers": {
+    "trilium": {
+      "command": "npx",
+      "args": [
+        "-y", "mcp-remote",
+        "http://<your-server-ip>:6969/mcp",
+        "--allow-http",
+        "--header", "Authorization: Bearer <your-mcp-auth-token>"
+      ]
+    }
+  }
+}
+```
+
+> **Note:** Claude Code currently has a [known issue](https://github.com/anthropics/claude-code/issues/7290) where it ignores `Authorization` headers on HTTP transport and forces OAuth discovery. Using `mcp-remote` as a stdio bridge is the recommended workaround.
+
 ### Claude Desktop
 
 Add to `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS):
+
+**Without authentication:**
 
 ```json
 {
@@ -139,7 +206,25 @@ Add to `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS)
 }
 ```
 
-> **Note:** Claude Desktop requires [mcp-remote](https://www.npmjs.com/package/mcp-remote) to connect to HTTP servers (needs Node.js). The `--allow-http` flag is required for non-HTTPS URLs.
+**With authentication:**
+
+```json
+{
+  "mcpServers": {
+    "trilium": {
+      "command": "npx",
+      "args": [
+        "-y", "mcp-remote",
+        "http://<your-server-ip>:6969/mcp",
+        "--allow-http",
+        "--header", "Authorization: Bearer <your-mcp-auth-token>"
+      ]
+    }
+  }
+}
+```
+
+> **Note:** Both clients require [mcp-remote](https://www.npmjs.com/package/mcp-remote) for authenticated connections (needs Node.js). The `--allow-http` flag is required for non-HTTPS URLs.
 
 ## Development
 
