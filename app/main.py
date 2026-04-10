@@ -2,6 +2,7 @@ import logging
 
 import app.attachment.tools
 import app.attribute.tools
+import app.backup.tools
 import app.branch.tools
 import app.clipper.tools
 import app.general.tools

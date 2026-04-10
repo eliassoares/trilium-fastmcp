@@ -52,7 +52,7 @@ This project exposes Trilium's [ETAPI](https://docs.triliumnotes.org/user-guide/
 
 ### Backup
 
-- [ ] `PUT /etapi/backup/:backupName` — create a backup
+- [x] `PUT /etapi/backup/:backupName` — create a backup
 
 ### Special Notes
 
