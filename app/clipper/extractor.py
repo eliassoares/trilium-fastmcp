@@ -124,8 +124,24 @@ def extract_page(html: str, url: str) -> ExtractedPage:
     site_name = _extract_og(soup, "og:site_name")
     published_time = _extract_og(soup, "article:published_time")
 
+    # Score <article> elements by total <p> text length rather than raw text.
+    # Sidebar widgets (related articles, promo cards) use <li>/<span>/<a> and
+    # contain zero prose paragraphs; real editorial articles have <p> content.
+    # Falling back to raw text would pick the sidebar whenever it has more
+    # link/list text than the article body (observed on otempo.com.br).
+    # If no <article> has any <p> text at all, best_article stays None and
+    # the selector chain below takes over (e.g. em.com.br uses <main>).
+    articles = soup.find_all("article")
+    best_article: Tag | None = None
+    if articles:
+        best = max(
+            articles,
+            key=lambda t: sum(len(p.get_text()) for p in t.find_all("p")),
+        )
+        if any(p.get_text().strip() for p in best.find_all("p")):
+            best_article = best
     content_tag = (
-        soup.find("article")
+        best_article
         or soup.find("main")
         or soup.find(id="content")
         or soup.find(id="main-content")

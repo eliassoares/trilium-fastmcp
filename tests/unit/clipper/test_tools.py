@@ -1,5 +1,6 @@
 import json
 from dataclasses import replace
+from unittest.mock import AsyncMock
 
 import httpx
 import pytest
@@ -8,6 +9,13 @@ import respx
 from app.clipper.extractor import ExtractedPage
 from app.clipper.tools import _MAX_RESPONSE_SIZE, _resolve_parent_note_id, clip_url
 from tests.unit.conftest import TRILIUM_URL
+
+
+@pytest.fixture
+def ctx() -> AsyncMock:
+    mock = AsyncMock()
+    mock.info = AsyncMock()
+    return mock
 
 
 @pytest.fixture
@@ -106,6 +114,7 @@ async def test_clip_url_creates_note_and_labels(
     monkeypatch: pytest.MonkeyPatch,
     extracted_page: ExtractedPage,
     clipped_note_response: dict[str, object],
+    ctx: AsyncMock,
 ) -> None:
     monkeypatch.setattr("app.clipper.tools.validate_url_for_fetch", lambda url: url)
     monkeypatch.setattr(
@@ -144,6 +153,7 @@ async def test_clip_url_creates_note_and_labels(
     )
 
     result = await clip_url(
+        ctx=ctx,
         url="https://example.com/article",
         parent_note_id="parent1234",
     )
@@ -166,6 +176,7 @@ async def test_clip_url_uses_url_when_extracted_title_missing(
     monkeypatch: pytest.MonkeyPatch,
     extracted_page: ExtractedPage,
     clipped_note_response: dict[str, object],
+    ctx: AsyncMock,
 ) -> None:
     monkeypatch.setattr("app.clipper.tools.validate_url_for_fetch", lambda url: url)
     monkeypatch.setattr(
@@ -203,7 +214,7 @@ async def test_clip_url_uses_url_when_extracted_title_missing(
     respx.post(f"{TRILIUM_URL}/etapi/attributes").mock(return_value=httpx.Response(200))
 
     result = await clip_url(
-        url="https://example.com/article", parent_note_id="parent1234"
+        ctx=ctx, url="https://example.com/article", parent_note_id="parent1234"
     )
 
     assert result.title == "https://example.com/article"
@@ -213,6 +224,7 @@ async def test_clip_url_uses_url_when_extracted_title_missing(
 @respx.mock
 async def test_clip_url_rejects_non_html_response(
     monkeypatch: pytest.MonkeyPatch,
+    ctx: AsyncMock,
 ) -> None:
     monkeypatch.setattr("app.clipper.tools.validate_url_for_fetch", lambda url: url)
 
@@ -225,12 +237,15 @@ async def test_clip_url_rejects_non_html_response(
     )
 
     with pytest.raises(ValueError, match="non-HTML content"):
-        await clip_url(url="https://example.com/file.pdf", parent_note_id="parent1234")
+        await clip_url(
+            ctx=ctx, url="https://example.com/file.pdf", parent_note_id="parent1234"
+        )
 
 
 @respx.mock
 async def test_clip_url_rejects_large_response(
     monkeypatch: pytest.MonkeyPatch,
+    ctx: AsyncMock,
 ) -> None:
     monkeypatch.setattr("app.clipper.tools.validate_url_for_fetch", lambda url: url)
 
@@ -243,7 +258,9 @@ async def test_clip_url_rejects_large_response(
     )
 
     with pytest.raises(ValueError, match="Page too large"):
-        await clip_url(url="https://example.com/article", parent_note_id="parent1234")
+        await clip_url(
+            ctx=ctx, url="https://example.com/article", parent_note_id="parent1234"
+        )
 
 
 @respx.mock
@@ -251,6 +268,7 @@ async def test_clip_url_collects_attribute_creation_warnings(
     monkeypatch: pytest.MonkeyPatch,
     extracted_page: ExtractedPage,
     clipped_note_response: dict[str, object],
+    ctx: AsyncMock,
 ) -> None:
     monkeypatch.setattr("app.clipper.tools.validate_url_for_fetch", lambda url: url)
     monkeypatch.setattr(
@@ -292,7 +310,7 @@ async def test_clip_url_collects_attribute_creation_warnings(
     ]
 
     result = await clip_url(
-        url="https://example.com/article", parent_note_id="parent1234"
+        ctx=ctx, url="https://example.com/article", parent_note_id="parent1234"
     )
 
     assert result.labels_created == 2
@@ -304,6 +322,7 @@ async def test_clip_url_collects_attribute_creation_warnings(
 async def test_clip_url_embeds_images_in_native_clipper_payload(
     monkeypatch: pytest.MonkeyPatch,
     clipped_note_response: dict[str, object],
+    ctx: AsyncMock,
 ) -> None:
     extracted_page = ExtractedPage(
         title="Extracted Title",
@@ -357,6 +376,7 @@ async def test_clip_url_embeds_images_in_native_clipper_payload(
     respx.post(f"{TRILIUM_URL}/etapi/attributes").mock(return_value=httpx.Response(200))
 
     result = await clip_url(
+        ctx=ctx,
         url="https://example.com/article",
         parent_note_id="parent1234",
     )
@@ -374,6 +394,7 @@ async def test_clip_url_embeds_images_in_native_clipper_payload(
 async def test_clip_url_warns_and_keeps_note_when_image_localization_fails(
     monkeypatch: pytest.MonkeyPatch,
     clipped_note_response: dict[str, object],
+    ctx: AsyncMock,
 ) -> None:
     extracted_page = ExtractedPage(
         title="Extracted Title",
@@ -421,6 +442,7 @@ async def test_clip_url_warns_and_keeps_note_when_image_localization_fails(
     respx.post(f"{TRILIUM_URL}/etapi/attributes").mock(return_value=httpx.Response(200))
 
     result = await clip_url(
+        ctx=ctx,
         url="https://example.com/article",
         parent_note_id="parent1234",
     )
@@ -438,6 +460,7 @@ async def test_clip_url_moves_native_clipper_note_to_requested_parent(
     extracted_page: ExtractedPage,
     note_response: dict[str, object],
     moved_note_response: dict[str, object],
+    ctx: AsyncMock,
 ) -> None:
     monkeypatch.setattr("app.clipper.tools.validate_url_for_fetch", lambda url: url)
     monkeypatch.setattr(
@@ -515,6 +538,7 @@ async def test_clip_url_moves_native_clipper_note_to_requested_parent(
     respx.post(f"{TRILIUM_URL}/etapi/attributes").mock(return_value=httpx.Response(200))
 
     result = await clip_url(
+        ctx=ctx,
         url="https://example.com/article",
         parent_note_id="parent1234",
     )

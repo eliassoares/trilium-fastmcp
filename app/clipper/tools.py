@@ -8,6 +8,7 @@ from urllib.parse import unquote, urlparse
 
 import httpx
 from bs4 import BeautifulSoup
+from fastmcp import Context
 from mcp.types import ToolAnnotations
 from pydantic import Field
 
@@ -241,6 +242,7 @@ async def _create_note_via_native_clipper(
     output_schema=ClipResult.model_json_schema(),
 )
 async def clip_url(
+    ctx: Context,
     url: Annotated[
         str,
         Field(
@@ -271,14 +273,19 @@ async def clip_url(
     ] = None,
 ) -> ClipResult:
     try:
+        await ctx.info(f"Validating the url {url}...")
         validate_url_for_fetch(url)
+        await ctx.info("URL validation has finished...")
     except SSRFError as e:
         raise ValueError(str(e)) from e
 
     async with get_web_client() as web_client:
+        await ctx.info(f"Fetching the url {url}...")
         response = await web_client.get(url)
+        await ctx.info("URL fetching complete")
         response.raise_for_status()
 
+        await ctx.info("Validating the page's content.")
         content_type = response.headers.get("content-type", "")
         if "text/html" not in content_type and "application/xhtml" not in content_type:
             raise ValueError(f"URL returns non-HTML content: {content_type}")
@@ -288,10 +295,13 @@ async def clip_url(
                 f"Page too large: {len(response.content)} bytes "
                 f"(max {_MAX_RESPONSE_SIZE})"
             )
+        await ctx.info("Page's content validation complete")
 
+        await ctx.info("Extracting page content...")
         page = extract_page(response.text, url)
 
         final_title = title or page.title or url
+        await ctx.info(f"Extracted title: {final_title!r}")
 
         note_html = (
             f'<p><em>Clipped from: <a href="{url}">{url}</a></em></p>'
@@ -303,6 +313,7 @@ async def clip_url(
 
         async with get_client() as client:
             resolved_parent = parent_note_id or await _resolve_parent_note_id(client)
+            await ctx.info("Localizing images...")
             clipper_payload, image_warnings = await _build_clipper_payload(
                 note_html=note_html,
                 title=final_title,
@@ -310,12 +321,17 @@ async def clip_url(
                 labels=clipper_labels,
                 web_client=web_client,
             )
+            n_images = len(clipper_payload.get("images", []))  # type: ignore[arg-type]
+            await ctx.info(f"Localized {n_images} image(s)")
             warnings: list[str] = []
             warnings.extend(image_warnings)
+            await ctx.info("Saving note to Trilium...")
             note_id = await _create_note_via_native_clipper(
                 client=client,
                 payload=clipper_payload,
             )
+            await ctx.info(f"Note created: {note_id}")
+            await ctx.info(f"Moving note to parent {resolved_parent}...")
             warnings.extend(
                 await _move_clipped_note(
                     client=client,
@@ -331,6 +347,7 @@ async def clip_url(
             ]
             labels_created = 0
 
+            await ctx.info("Attaching labels...")
             for label_name, label_value in labels:
                 if not label_value:
                     continue
@@ -348,6 +365,7 @@ async def clip_url(
                     labels_created += 1
                 except Exception as e:
                     warnings.append(f"Failed to create label '{label_name}': {e}")
+            await ctx.info(f"Done — {labels_created} label(s) attached")
 
     return ClipResult(
         note_id=note_id,
