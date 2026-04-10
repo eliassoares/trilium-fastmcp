@@ -1,0 +1,110 @@
+from typing import Annotated
+
+from mcp.types import ToolAnnotations
+from pydantic import Field
+
+from app import mcp
+from app.attachment.schemas import Attachment, CreateAttachment
+from app.client import get_client
+
+_TEXT_ATTACHMENT_MIME_EXACT = {
+    "application/javascript",
+    "application/json",
+    "application/xml",
+    "image/svg+xml",
+}
+
+
+def _is_text_like_attachment(mime: str) -> bool:
+    normalized = mime.strip().lower()
+    return normalized.startswith("text/") or normalized in _TEXT_ATTACHMENT_MIME_EXACT
+
+
+@mcp.tool(
+    name="create_attachment",
+    description=(
+        "Create a text-like attachment. "
+        "Binary attachments are not supported by this tool."
+    ),
+    annotations=ToolAnnotations(readOnlyHint=False),
+)
+async def create_attachment(
+    owner_id: Annotated[
+        str,
+        Field(
+            ...,
+            description="ID of the owning entity — either a noteId or a revisionId",
+            examples=["evnnmvHTCgIn"],
+            pattern="[a-zA-Z0-9_]{4,32}",
+        ),
+    ],
+    role: Annotated[
+        str,
+        Field(
+            ...,
+            description=(
+                "Purpose of the attachment within its owner. "
+                "Known values: 'image' (embedded image in a text note), "
+                "'file' (generic file attachment)."
+            ),
+            examples=["image", "file"],
+        ),
+    ],
+    mime: Annotated[
+        str,
+        Field(
+            ...,
+            description="MIME type of the attachment content",
+            examples=["image/png", "application/pdf", "text/javascript"],
+        ),
+    ],
+    title: Annotated[
+        str,
+        Field(
+            ...,
+            description="Display name of the attachment",
+            examples=["screenshot.png", "report.pdf"],
+        ),
+    ],
+    content: Annotated[
+        str,
+        Field(
+            ...,
+            description=(
+                "Attachment content for text-like attachments. "
+                "Binary attachment content is not supported by this tool."
+            ),
+        ),
+    ],
+    position: Annotated[
+        int | None,
+        Field(
+            description=(
+                "Ordering hint when a note has multiple attachments. "
+                "Lower values sort first."
+            ),
+            examples=[10],
+        ),
+    ] = None,
+) -> Attachment:
+    if not _is_text_like_attachment(mime):
+        raise ValueError(
+            "create_attachment only supports text-like attachments. "
+            "Use a text/*, application/json, application/javascript, "
+            "application/xml, or image/svg+xml MIME type."
+        )
+
+    async with get_client() as client:
+        response = await client.post(
+            "/etapi/attachments",
+            json=CreateAttachment(
+                owner_id=owner_id,
+                role=role,
+                mime=mime,
+                title=title,
+                content=content,
+                position=position,
+            ).model_dump(by_alias=True, exclude_none=True, mode="json"),
+        )
+        response.raise_for_status()
+        return Attachment.model_validate(response.json())

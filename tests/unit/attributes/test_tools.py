@@ -4,7 +4,7 @@ import httpx
 import pytest
 import respx
 
-from app.attributes.tools import (
+from app.attribute.tools import (
     create_attribute,
     delete_attribute,
     get_attribute,

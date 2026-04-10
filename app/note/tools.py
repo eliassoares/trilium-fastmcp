@@ -7,11 +7,11 @@ from mcp.types import ToolAnnotations
 from pydantic import Field
 
 from app import mcp
+from app.attachment.schemas import Attachment
 from app.client import get_client
 from app.note.schemas import (
     CreateNoteParams,
     Note,
-    NoteAttachment,
     NoteExportType,
     NoteOrderBy,
     NoteOrderDirection,
@@ -226,13 +226,13 @@ async def get_note_attachments(
             pattern="[a-zA-Z0-9_]{4,32}",
         ),
     ],
-) -> list[NoteAttachment]:
+) -> list[Attachment]:
     async with get_client() as client:
         response = await client.get(
             f"/etapi/notes/{note_id}/attachments",
         )
         response.raise_for_status()
-        return [NoteAttachment.model_validate(item) for item in response.json()]
+        return [Attachment.model_validate(item) for item in response.json()]
 
 
 @mcp.tool(

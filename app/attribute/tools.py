@@ -5,7 +5,7 @@ from mcp.types import ToolAnnotations
 from pydantic import Field
 
 from app import mcp
-from app.attributes.schemas import CreateAttributeParams, UpdateAttributeParams
+from app.attribute.schemas import CreateAttributeParams, UpdateAttributeParams
 from app.client import get_client
 from app.note.schemas import Attribute, AttributeType
 

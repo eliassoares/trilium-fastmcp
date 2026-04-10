@@ -1,6 +1,7 @@
 import logging
 
-import app.attributes.tools
+import app.attachment.tools
+import app.attribute.tools
 import app.branch.tools
 import app.clipper.tools
 import app.general.tools
