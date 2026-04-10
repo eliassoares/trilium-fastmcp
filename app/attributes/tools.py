@@ -108,9 +108,7 @@ async def create_attribute(
     async with get_client() as client:
         response = await client.post(
             "/etapi/attributes",
-            json=params.model_dump(
-                by_alias=True, exclude_none=True, mode="json"
-            ),
+            json=params.model_dump(by_alias=True, exclude_none=True, mode="json"),
         )
         response.raise_for_status()
         return Attribute.model_validate(response.json())
@@ -176,9 +174,7 @@ async def update_attribute(
     async with get_client() as client:
         response = await client.patch(
             f"/etapi/attributes/{attribute_id}",
-            json=params.model_dump(
-                by_alias=True, exclude_none=True, mode="json"
-            ),
+            json=params.model_dump(by_alias=True, exclude_none=True, mode="json"),
         )
         response.raise_for_status()
         return Attribute.model_validate(response.json())

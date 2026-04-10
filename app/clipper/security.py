@@ -42,8 +42,6 @@ def validate_url_for_fetch(url: str) -> str:
 
     for network in _PRIVATE_NETWORKS:
         if resolved in network:
-            raise SSRFError(
-                f"URL resolves to private/loopback address {resolved}"
-            )
+            raise SSRFError(f"URL resolves to private/loopback address {resolved}")
 
     return url

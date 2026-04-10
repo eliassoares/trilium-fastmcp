@@ -1,6 +1,5 @@
 import asyncio
 
-import app.main
 from app import mcp
 
 

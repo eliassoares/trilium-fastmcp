@@ -107,10 +107,10 @@ async def test_clip_url_creates_note_and_labels(
     extracted_page: ExtractedPage,
     clipped_note_response: dict[str, object],
 ) -> None:
+    monkeypatch.setattr("app.clipper.tools.validate_url_for_fetch", lambda url: url)
     monkeypatch.setattr(
-        "app.clipper.tools.validate_url_for_fetch", lambda url: url)
-    monkeypatch.setattr("app.clipper.tools.extract_page",
-                        lambda html, url: extracted_page)
+        "app.clipper.tools.extract_page", lambda html, url: extracted_page
+    )
 
     respx.get("https://example.com/article").mock(
         return_value=httpx.Response(
@@ -167,8 +167,7 @@ async def test_clip_url_uses_url_when_extracted_title_missing(
     extracted_page: ExtractedPage,
     clipped_note_response: dict[str, object],
 ) -> None:
-    monkeypatch.setattr(
-        "app.clipper.tools.validate_url_for_fetch", lambda url: url)
+    monkeypatch.setattr("app.clipper.tools.validate_url_for_fetch", lambda url: url)
     monkeypatch.setattr(
         "app.clipper.tools.extract_page",
         lambda html, url: replace(extracted_page, title=""),
@@ -201,9 +200,7 @@ async def test_clip_url_uses_url_when_extracted_title_missing(
             },
         )
     )
-    respx.post(f"{TRILIUM_URL}/etapi/attributes").mock(
-        return_value=httpx.Response(200)
-    )
+    respx.post(f"{TRILIUM_URL}/etapi/attributes").mock(return_value=httpx.Response(200))
 
     result = await clip_url(
         url="https://example.com/article", parent_note_id="parent1234"
@@ -217,8 +214,7 @@ async def test_clip_url_uses_url_when_extracted_title_missing(
 async def test_clip_url_rejects_non_html_response(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    monkeypatch.setattr(
-        "app.clipper.tools.validate_url_for_fetch", lambda url: url)
+    monkeypatch.setattr("app.clipper.tools.validate_url_for_fetch", lambda url: url)
 
     respx.get("https://example.com/file.pdf").mock(
         return_value=httpx.Response(
@@ -236,8 +232,7 @@ async def test_clip_url_rejects_non_html_response(
 async def test_clip_url_rejects_large_response(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    monkeypatch.setattr(
-        "app.clipper.tools.validate_url_for_fetch", lambda url: url)
+    monkeypatch.setattr("app.clipper.tools.validate_url_for_fetch", lambda url: url)
 
     respx.get("https://example.com/article").mock(
         return_value=httpx.Response(
@@ -257,10 +252,10 @@ async def test_clip_url_collects_attribute_creation_warnings(
     extracted_page: ExtractedPage,
     clipped_note_response: dict[str, object],
 ) -> None:
+    monkeypatch.setattr("app.clipper.tools.validate_url_for_fetch", lambda url: url)
     monkeypatch.setattr(
-        "app.clipper.tools.validate_url_for_fetch", lambda url: url)
-    monkeypatch.setattr("app.clipper.tools.extract_page",
-                        lambda html, url: extracted_page)
+        "app.clipper.tools.extract_page", lambda html, url: extracted_page
+    )
 
     respx.get("https://example.com/article").mock(
         return_value=httpx.Response(
@@ -320,10 +315,10 @@ async def test_clip_url_embeds_images_in_native_clipper_payload(
         site_name="Example Site",
         published_time="2024-01-02T03:04:05Z",
     )
+    monkeypatch.setattr("app.clipper.tools.validate_url_for_fetch", lambda url: url)
     monkeypatch.setattr(
-        "app.clipper.tools.validate_url_for_fetch", lambda url: url)
-    monkeypatch.setattr("app.clipper.tools.extract_page",
-                        lambda html, url: extracted_page)
+        "app.clipper.tools.extract_page", lambda html, url: extracted_page
+    )
 
     respx.get("https://example.com/article").mock(
         return_value=httpx.Response(
@@ -359,9 +354,7 @@ async def test_clip_url_embeds_images_in_native_clipper_payload(
             },
         )
     )
-    respx.post(f"{TRILIUM_URL}/etapi/attributes").mock(
-        return_value=httpx.Response(200)
-    )
+    respx.post(f"{TRILIUM_URL}/etapi/attributes").mock(return_value=httpx.Response(200))
 
     result = await clip_url(
         url="https://example.com/article",
@@ -372,9 +365,7 @@ async def test_clip_url_embeds_images_in_native_clipper_payload(
     assert clipper_payload["pageUrl"] == "https://example.com/article"
     assert len(clipper_payload["images"]) == 1
     assert clipper_payload["images"][0]["src"] == "https://cdn.example.com/image.png"
-    assert clipper_payload["images"][0]["dataUrl"].startswith(
-        "data:image/png;base64,"
-    )
+    assert clipper_payload["images"][0]["dataUrl"].startswith("data:image/png;base64,")
     assert "https://cdn.example.com/image.png" not in clipper_payload["content"]
     assert result.warnings == []
 
@@ -392,8 +383,7 @@ async def test_clip_url_warns_and_keeps_note_when_image_localization_fails(
         site_name="Example Site",
         published_time="2024-01-02T03:04:05Z",
     )
-    monkeypatch.setattr(
-        "app.clipper.tools.validate_url_for_fetch", lambda url: url)
+    monkeypatch.setattr("app.clipper.tools.validate_url_for_fetch", lambda url: url)
     monkeypatch.setattr(
         "app.clipper.tools.extract_page", lambda html, url: extracted_page
     )
@@ -428,9 +418,7 @@ async def test_clip_url_warns_and_keeps_note_when_image_localization_fails(
             },
         )
     )
-    respx.post(f"{TRILIUM_URL}/etapi/attributes").mock(
-        return_value=httpx.Response(200)
-    )
+    respx.post(f"{TRILIUM_URL}/etapi/attributes").mock(return_value=httpx.Response(200))
 
     result = await clip_url(
         url="https://example.com/article",
@@ -451,8 +439,7 @@ async def test_clip_url_moves_native_clipper_note_to_requested_parent(
     note_response: dict[str, object],
     moved_note_response: dict[str, object],
 ) -> None:
-    monkeypatch.setattr(
-        "app.clipper.tools.validate_url_for_fetch", lambda url: url)
+    monkeypatch.setattr("app.clipper.tools.validate_url_for_fetch", lambda url: url)
     monkeypatch.setattr(
         "app.clipper.tools.extract_page", lambda html, url: extracted_page
     )
@@ -525,17 +512,14 @@ async def test_clip_url_moves_native_clipper_note_to_requested_parent(
     delete_branch = respx.delete(f"{TRILIUM_URL}/etapi/branches/branch123").mock(
         return_value=httpx.Response(204)
     )
-    respx.post(f"{TRILIUM_URL}/etapi/attributes").mock(
-        return_value=httpx.Response(200)
-    )
+    respx.post(f"{TRILIUM_URL}/etapi/attributes").mock(return_value=httpx.Response(200))
 
     result = await clip_url(
         url="https://example.com/article",
         parent_note_id="parent1234",
     )
 
-    create_branch_payload = json.loads(
-        create_branch.calls.last.request.content)
+    create_branch_payload = json.loads(create_branch.calls.last.request.content)
     assert create_branch_payload == {
         "noteId": "clipped123",
         "parentNoteId": "parent1234",

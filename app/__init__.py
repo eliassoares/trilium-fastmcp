@@ -9,7 +9,7 @@ if settings.mcp_auth_token and settings.mcp_client_id:
         tokens={
             settings.mcp_auth_token: {
                 "client_id": settings.mcp_client_id,
-                "scopes": ["read", "write"]
+                "scopes": ["read", "write"],
             }
         }
     )

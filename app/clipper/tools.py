@@ -43,9 +43,7 @@ async def _resolve_parent_note_id(
     )
     search_response = await client.get(
         "/etapi/notes",
-        params=params.model_dump(
-            by_alias=True, exclude_none=True, mode="json"
-        ),
+        params=params.model_dump(by_alias=True, exclude_none=True, mode="json"),
     )
     search_response.raise_for_status()
     results = SearchNotesResponse.model_validate(search_response.json())
@@ -61,9 +59,7 @@ async def _resolve_parent_note_id(
     )
     create_response = await client.post(
         "/etapi/create-note",
-        json=create_params.model_dump(
-            by_alias=True, exclude_none=True, mode="json"
-        ),
+        json=create_params.model_dump(by_alias=True, exclude_none=True, mode="json"),
     )
     create_response.raise_for_status()
     created = NoteWithBranch.model_validate(create_response.json())
@@ -132,9 +128,7 @@ async def _build_clipper_payload(
                 content_type = response.headers.get("content-type", "")
                 mime = content_type.split(";", 1)[0].strip().lower()
                 if not mime.startswith("image/"):
-                    raise ValueError(
-                        f"URL returns non-image content: {content_type}"
-                    )
+                    raise ValueError(f"URL returns non-image content: {content_type}")
                 if len(response.content) > _MAX_IMAGE_SIZE:
                     raise ValueError(
                         f"Image too large: {len(response.content)} bytes "
@@ -287,9 +281,7 @@ async def clip_url(
 
         content_type = response.headers.get("content-type", "")
         if "text/html" not in content_type and "application/xhtml" not in content_type:
-            raise ValueError(
-                f"URL returns non-HTML content: {content_type}"
-            )
+            raise ValueError(f"URL returns non-HTML content: {content_type}")
 
         if len(response.content) > _MAX_RESPONSE_SIZE:
             raise ValueError(
@@ -310,9 +302,7 @@ async def clip_url(
             clipper_labels["publishedDate"] = page.published_time
 
         async with get_client() as client:
-            resolved_parent = parent_note_id or await _resolve_parent_note_id(
-                client
-            )
+            resolved_parent = parent_note_id or await _resolve_parent_note_id(client)
             clipper_payload, image_warnings = await _build_clipper_payload(
                 note_html=note_html,
                 title=final_title,
@@ -357,9 +347,7 @@ async def clip_url(
                     )
                     labels_created += 1
                 except Exception as e:
-                    warnings.append(
-                        f"Failed to create label '{label_name}': {e}"
-                    )
+                    warnings.append(f"Failed to create label '{label_name}': {e}")
 
     return ClipResult(
         note_id=note_id,

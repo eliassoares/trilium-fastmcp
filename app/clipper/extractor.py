@@ -3,21 +3,23 @@ from urllib.parse import urljoin
 
 from bs4 import BeautifulSoup, Tag
 
-_NOISE_TAGS = frozenset({
-    "script",
-    "style",
-    "nav",
-    "header",
-    "footer",
-    "aside",
-    "noscript",
-    "iframe",
-    "form",
-    "button",
-    "input",
-    "select",
-    "textarea",
-})
+_NOISE_TAGS = frozenset(
+    {
+        "script",
+        "style",
+        "nav",
+        "header",
+        "footer",
+        "aside",
+        "noscript",
+        "iframe",
+        "form",
+        "button",
+        "input",
+        "select",
+        "textarea",
+    }
+)
 
 
 @dataclass(frozen=True)
@@ -72,15 +74,15 @@ def _make_links_absolute(tag: Tag, base_url: str) -> None:
         ):
             a["href"] = urljoin(base_url, href)
 
-    lazy_src_attrs = (
-        "data-src", "data-lazy-src", "data-original", "data-lazy"
-    )
+    lazy_src_attrs = ("data-src", "data-lazy-src", "data-original", "data-lazy")
     lazy_srcset_attrs = ("data-srcset", "srcset")
     for img in tag.find_all("img"):
-        src = img.get("src", "")
+        src_raw = img.get("src", "")
+        src = src_raw if isinstance(src_raw, str) else ""
         # Resolve lazy-loaded images: prefer lazy attr when src is missing/placeholder
         if (
-            not src or "data:image" in src
+            not src
+            or "data:image" in src
             or src.endswith(("1x1.gif", "1x1.png", "placeholder"))
         ):
             # First try direct src attrs
@@ -92,7 +94,8 @@ def _make_links_absolute(tag: Tag, base_url: str) -> None:
                     break
             # Fall back to srcset attrs — extract URL from first candidate
             if (
-                not src or "data:image" in src
+                not src
+                or "data:image" in src
                 or src.endswith(("1x1.gif", "1x1.png", "placeholder"))
             ):
                 for attr in lazy_srcset_attrs:
@@ -103,8 +106,10 @@ def _make_links_absolute(tag: Tag, base_url: str) -> None:
                             img["src"] = first_candidate
                             src = first_candidate
                             break
-        if isinstance(src, str) and src and not src.startswith(
-            ("http://", "https://", "data:")
+        if (
+            isinstance(src, str)
+            and src
+            and not src.startswith(("http://", "https://", "data:"))
         ):
             img["src"] = urljoin(base_url, src)
 
@@ -129,9 +134,7 @@ def extract_page(html: str, url: str) -> ExtractedPage:
     )
 
     if content_tag and isinstance(content_tag, Tag):
-        for noise in content_tag.find_all(
-            lambda t: t.name in _NOISE_TAGS
-        ):
+        for noise in content_tag.find_all(lambda t: t.name in _NOISE_TAGS):
             noise.decompose()
         # Convert <amp-img> to <img> (used by AMP pages, e.g. G1/Globo)
         for amp_img in content_tag.find_all("amp-img"):

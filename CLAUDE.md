@@ -86,7 +86,7 @@ make clean         # Remove caches and build artifacts
 
 ## Dependencies
 
-- Runtime: `fastmcp==3.1.1`, `httpx>=0.28.1`, `pydantic==2.12.5`
+- Runtime: `fastmcp==3.2.3`, `httpx>=0.28.1`, `pydantic==2.12.5`
 - Dev: `ruff`, `mypy`, `bandit`, `pip-audit`, `pre-commit`
 
 ## Conventions

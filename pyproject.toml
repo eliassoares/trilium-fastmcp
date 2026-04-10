@@ -5,8 +5,8 @@ description = "An MCP (Model Context Protocol) server for Trilium Notes, exposin
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
-    "cryptography>=46.0.6",
-    "fastmcp==3.1.1",
+    "cryptography>=46.0.7",
+    "fastmcp==3.2.3",
     "httpx>=0.28.1",
     "pydantic==2.12.5",
     "pydantic-settings==2.13.1",

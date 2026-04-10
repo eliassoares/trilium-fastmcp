@@ -253,7 +253,9 @@ async def test_update_note_metadata_serializes_payload(
         return_value=httpx.Response(200, json=note_response)
     )
 
-    await update_note_metadata(note_id="evnnmvHTCgIn", title="New Title", note_type=NoteType.text)
+    await update_note_metadata(
+        note_id="evnnmvHTCgIn", title="New Title", note_type=NoteType.text
+    )
 
     payload = json.loads(request.calls.last.request.content)
     assert payload["title"] == "New Title"
@@ -315,7 +317,9 @@ async def test_update_note_content_returns_none() -> None:
         return_value=httpx.Response(204)
     )
 
-    result = await update_note_content(note_id="evnnmvHTCgIn", content="<p>Hello</p>")
+    result = await update_note_content(  # type: ignore[func-returns-value]
+        note_id="evnnmvHTCgIn", content="<p>Hello</p>"
+    )
 
     assert result is None
 
@@ -342,9 +346,9 @@ async def test_update_note_content_raises_on_unauthorized() -> None:
 
 @respx.mock
 async def test_create_note_revision_returns_success() -> None:
-    request = respx.post(
-        f"{TRILIUM_URL}/etapi/notes/evnnmvHTCgIn/revision"
-    ).mock(return_value=httpx.Response(204))
+    request = respx.post(f"{TRILIUM_URL}/etapi/notes/evnnmvHTCgIn/revision").mock(
+        return_value=httpx.Response(204)
+    )
 
     result = await create_note_revision(note_id="evnnmvHTCgIn")
 
@@ -354,9 +358,9 @@ async def test_create_note_revision_returns_success() -> None:
 
 @respx.mock
 async def test_create_note_revision_passes_default_format() -> None:
-    request = respx.post(
-        f"{TRILIUM_URL}/etapi/notes/evnnmvHTCgIn/revision"
-    ).mock(return_value=httpx.Response(204))
+    request = respx.post(f"{TRILIUM_URL}/etapi/notes/evnnmvHTCgIn/revision").mock(
+        return_value=httpx.Response(204)
+    )
 
     await create_note_revision(note_id="evnnmvHTCgIn")
 
@@ -365,9 +369,9 @@ async def test_create_note_revision_passes_default_format() -> None:
 
 @respx.mock
 async def test_create_note_revision_passes_custom_format() -> None:
-    request = respx.post(
-        f"{TRILIUM_URL}/etapi/notes/evnnmvHTCgIn/revision"
-    ).mock(return_value=httpx.Response(204))
+    request = respx.post(f"{TRILIUM_URL}/etapi/notes/evnnmvHTCgIn/revision").mock(
+        return_value=httpx.Response(204)
+    )
 
     await create_note_revision(
         note_id="evnnmvHTCgIn",
@@ -379,9 +383,9 @@ async def test_create_note_revision_passes_custom_format() -> None:
 
 @respx.mock
 async def test_create_note_revision_raises_on_not_found() -> None:
-    respx.post(
-        f"{TRILIUM_URL}/etapi/notes/nonexistent/revision"
-    ).mock(return_value=httpx.Response(404))
+    respx.post(f"{TRILIUM_URL}/etapi/notes/nonexistent/revision").mock(
+        return_value=httpx.Response(404)
+    )
 
     with pytest.raises(httpx.HTTPStatusError):
         await create_note_revision(note_id="nonexistent")
@@ -389,9 +393,9 @@ async def test_create_note_revision_raises_on_not_found() -> None:
 
 @respx.mock
 async def test_create_note_revision_raises_on_unauthorized() -> None:
-    respx.post(
-        f"{TRILIUM_URL}/etapi/notes/evnnmvHTCgIn/revision"
-    ).mock(return_value=httpx.Response(401))
+    respx.post(f"{TRILIUM_URL}/etapi/notes/evnnmvHTCgIn/revision").mock(
+        return_value=httpx.Response(401)
+    )
 
     with pytest.raises(httpx.HTTPStatusError):
         await create_note_revision(note_id="evnnmvHTCgIn")

@@ -95,11 +95,7 @@ async def search_notes(
     ] = NoteOrderDirection.asc,
     limit: Annotated[
         int | None,
-        Field(
-            description="Maximum number of results to return",
-            examples=[10],
-            gt=0
-        ),
+        Field(description="Maximum number of results to return", examples=[10], gt=0),
     ] = None,
     debug: Annotated[
         bool,
@@ -125,9 +121,7 @@ async def search_notes(
         logger.info("Calling search_notes with query: %s", search)
         response = await client.get(
             "/etapi/notes",
-            params=params.model_dump(
-                by_alias=True, exclude_none=True, mode="json"
-            ),
+            params=params.model_dump(by_alias=True, exclude_none=True, mode="json"),
         )
         response.raise_for_status()
         return SearchNotesResponse.model_validate(response.json())
@@ -246,7 +240,7 @@ async def get_note_attachments(
     description=(
         "Returns recent changes including note creations, modifications, and deletions"
     ),
-    annotations=ToolAnnotations(readOnlyHint=True)
+    annotations=ToolAnnotations(readOnlyHint=True),
 )
 async def get_note_history(
     ancestor_note_id: Annotated[
@@ -263,8 +257,7 @@ async def get_note_history(
 ) -> list[NoteRecentChange]:
     async with get_client() as client:
         response = await client.get(
-            "/etapi/notes/history",
-            params={"ancestorNoteId": ancestor_note_id}
+            "/etapi/notes/history", params={"ancestorNoteId": ancestor_note_id}
         )
         response.raise_for_status()
         return [NoteRecentChange.model_validate(item) for item in response.json()]
@@ -273,7 +266,7 @@ async def get_note_history(
 @mcp.tool(
     name="get_note_revisions",
     description="Returns all revisions for a note identified by its ID",
-    annotations=ToolAnnotations(readOnlyHint=True)
+    annotations=ToolAnnotations(readOnlyHint=True),
 )
 async def get_note_revisions(
     note_id: Annotated[
@@ -283,7 +276,7 @@ async def get_note_revisions(
             examples=["evnnmvHTCgIn"],
             pattern="[a-zA-Z0-9_]{4,32}",
         ),
-    ]
+    ],
 ) -> list[Revision]:
     async with get_client() as client:
         response = await client.get(f"/etapi/notes/{note_id}/revisions")
@@ -293,9 +286,7 @@ async def get_note_revisions(
 
 @mcp.tool(
     name="create_note",
-    description=(
-        "Create a note and place it into the note tree"
-    ),
+    description=("Create a note and place it into the note tree"),
     annotations=ToolAnnotations(readOnlyHint=False),
 )
 async def create_note(
@@ -304,28 +295,20 @@ async def create_note(
         Field(
             description="Note ID of the parent note in the tree",
             examples=["evnnmvHTCgIn"],
-            pattern="[a-zA-Z0-9_]{4,32}"
+            pattern="[a-zA-Z0-9_]{4,32}",
         ),
     ],
     title: Annotated[
         str,
-        Field(description="Note title",
-              examples=["Cruzeiro, maior de Minas Gerais"]
-              ),
+        Field(description="Note title", examples=["Cruzeiro, maior de Minas Gerais"]),
     ],
     note_type: Annotated[
         NoteType,
-        Field(
-            description="Note type",
-            examples=["text", "file"]
-        ),
+        Field(description="Note type", examples=["text", "file"]),
     ],
     content: Annotated[
         str,
-        Field(
-            description="Note content",
-            examples=["CRU 6 x ATL 1"]
-        ),
+        Field(description="Note content", examples=["CRU 6 x ATL 1"]),
     ],
     mime: Annotated[
         str | None,
@@ -334,7 +317,7 @@ async def create_note(
                 "Note mime. This needs to be specified "
                 "only for note types 'code', 'file', 'image'."
             ),
-            examples=["application/json"]
+            examples=["application/json"],
         ),
     ] = None,
     note_position: Annotated[
@@ -346,7 +329,7 @@ async def create_note(
                 "use e.g. 5, for second position 15, "
                 "for last e.g. 1000000"
             ),
-            examples=[10, 20]
+            examples=[10, 20],
         ),
     ] = None,
     prefix: Annotated[
@@ -359,7 +342,7 @@ async def create_note(
                 "but you want to change the title a bit in one of the placements. "
                 "For this you can use prefix."
             ),
-            examples=["Cruzei"]
+            examples=["Cruzei"],
         ),
     ] = None,
     is_expanded: Annotated[
@@ -369,32 +352,30 @@ async def create_note(
                 "A bool that says: true if this note "
                 "(as a folder) should appear expanded"
             ),
-            examples=[True]
+            examples=[True],
         ),
     ] = False,
     note_id: Annotated[
         str | None,
         Field(
             description=(
-                "Note ID. DON'T specify unless you "
-                "want to force a specific noteId"
+                "Note ID. DON'T specify unless you want to force a specific noteId"
             ),
             examples=["evnnmvHTCgIn"],
-            pattern="[a-zA-Z0-9_]{4,32}"
+            pattern="[a-zA-Z0-9_]{4,32}",
         ),
     ] = None,
     branch_id: Annotated[
         str | None,
         Field(
             description=(
-                "Branch ID. DON'T specify unless you "
-                "want to force a specific branchId"
+                "Branch ID. DON'T specify unless you want to force a specific branchId"
             ),
             examples=["evnnmvHTCgIn"],
-            pattern="[a-zA-Z0-9_]{4,32}"
+            pattern="[a-zA-Z0-9_]{4,32}",
         ),
     ] = None,
-    date_created:  Annotated[
+    date_created: Annotated[
         datetime | None,
         Field(
             description=(
@@ -406,7 +387,7 @@ async def create_note(
             examples=[datetime.fromisoformat("2022-02-09T22:52:36+01:00")],
         ),
     ] = None,
-    utc_date_created:  Annotated[
+    utc_date_created: Annotated[
         datetime | None,
         Field(
             description=(
@@ -434,9 +415,7 @@ async def create_note(
     async with get_client() as client:
         response = await client.post(
             "/etapi/create-note",
-            json=params.model_dump(
-                by_alias=True, exclude_none=True, mode="json"
-            ),
+            json=params.model_dump(by_alias=True, exclude_none=True, mode="json"),
         )
         response.raise_for_status()
         return NoteWithBranch.model_validate(response.json())
@@ -446,7 +425,7 @@ async def create_note(
     name="update_note_metadata",
     description="Update a note identified by the noteId with changes in the body",
     annotations=ToolAnnotations(readOnlyHint=False),
-    tags={"update"}
+    tags={"update"},
 )
 async def update_note_metadata(
     note_id: Annotated[
@@ -460,18 +439,13 @@ async def update_note_metadata(
     title: Annotated[
         str | None,
         Field(
-            description=(
-                "The note title"
-            ),
+            description=("The note title"),
             examples=["Cruzeiro maior de Minas"],
         ),
     ] = None,
     note_type: Annotated[
         NoteType | None,
-        Field(
-            description="Note type",
-            examples=["text", "file"]
-        ),
+        Field(description="Note type", examples=["text", "file"]),
     ] = None,
     mime: Annotated[
         str | None,
@@ -480,10 +454,10 @@ async def update_note_metadata(
                 "Note mime. This needs to be specified "
                 "only for note types 'code', 'file', 'image'."
             ),
-            examples=["application/json"]
+            examples=["application/json"],
         ),
     ] = None,
-    date_created:  Annotated[
+    date_created: Annotated[
         datetime | None,
         Field(
             description=(
@@ -495,7 +469,7 @@ async def update_note_metadata(
             examples=[datetime.fromisoformat("2022-02-09T22:52:36+01:00")],
         ),
     ] = None,
-    utc_date_created:  Annotated[
+    utc_date_created: Annotated[
         datetime | None,
         Field(
             description=(
@@ -516,9 +490,7 @@ async def update_note_metadata(
         )
         response = await client.patch(
             f"/etapi/notes/{note_id}",
-            json=params.model_dump(
-                by_alias=True, exclude_none=True, mode="json"
-            )
+            json=params.model_dump(by_alias=True, exclude_none=True, mode="json"),
         )
         response.raise_for_status()
         return Note.model_validate(response.json())
@@ -592,31 +564,32 @@ async def create_note_revision(
     name="delete_note",
     description="Deletes a single note based on the noteId supplied",
     annotations=ToolAnnotations(destructiveHint=True),
-    tags={"delete"}
+    tags={"delete"},
 )
 async def delete_note(
-        note_id: Annotated[
+    note_id: Annotated[
         str,
         Field(
             description="The note id to delete it",
             examples=["evnnmvHTCgIn"],
             pattern="[a-zA-Z0-9_]{4,32}",
         ),
-        ],
+    ],
 ) -> str:
     async with get_client() as client:
-        response = await client.delete(
-            f"/etapi/notes/{note_id}"
-        )
+        response = await client.delete(f"/etapi/notes/{note_id}")
         response.raise_for_status()
     return "Note deleted successfully"
 
 
 @mcp.tool(
     name="undelete_note",
-    description="Restore a deleted note. The note must be deleted and must have at least one undeleted parent",
+    description=(
+        "Restore a deleted note. The note must be deleted and "
+        "must have at least one undeleted parent"
+    ),
     annotations=ToolAnnotations(readOnlyHint=False),
-    tags={"update"}
+    tags={"update"},
 )
 async def undelete_note(
     note_id: Annotated[
@@ -629,8 +602,6 @@ async def undelete_note(
     ],
 ) -> str:
     async with get_client() as client:
-        response = await client.post(
-            f"/etapi/notes/{note_id}/undelete"
-        )
+        response = await client.post(f"/etapi/notes/{note_id}/undelete")
         response.raise_for_status()
     return "Note restored successfully"

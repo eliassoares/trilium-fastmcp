@@ -37,12 +37,10 @@ async def get_web_client() -> AsyncGenerator[httpx.AsyncClient]:
         timeout=httpx.Timeout(connect=5.0, read=30.0, write=5.0, pool=5.0),
         headers={
             "User-Agent": (
-                "Mozilla/5.0 (compatible; trilium-fastmcp/1.0; "
-                "+https://github.com)"
+                "Mozilla/5.0 (compatible; trilium-fastmcp/1.0; +https://github.com)"
             ),
             "Accept": (
-                "text/html,application/xhtml+xml,"
-                "application/xml;q=0.9,*/*;q=0.8"
+                "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
             ),
             "Accept-Language": "en-US,en;q=0.5",
         },
