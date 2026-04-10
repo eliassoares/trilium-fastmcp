@@ -18,7 +18,7 @@ async def get_branch(
         str,
         Field(
             description="The branch id to retrieve the branch",
-            examples=["evnnmvHTCgIn"],
+            examples=["BiLlVTUX4Fzk_KMa5HXFDUW3J"],
             pattern="[a-zA-Z0-9_]{4,32}",
         ),
     ],
@@ -99,6 +99,71 @@ async def create_branch(
     async with get_client() as client:
         response = await client.post(
             "/etapi/branches",
+            json=payload,
+        )
+        response.raise_for_status()
+
+        return Branch.model_validate(response.json())
+
+
+@mcp.tool(
+    name="update_branch",
+    description=(
+        "Patch a branch identified by the branchId with changes in the body. "
+        "Only prefix and notePosition can be updated. If you want to update "
+        "other properties, you need to delete the old branch and create a new one."
+    ),
+    annotations=ToolAnnotations(readOnlyHint=False),
+    tags={"update"},
+)
+async def update_branch(
+    branch_id: Annotated[
+        str,
+        Field(
+            ...,
+            description="Identifies the branch",
+            examples=["BiLlVTUX4Fzk_KMa5HXFDUW3J"],
+            pattern="[a-zA-Z0-9_]{4,32}",
+        ),
+    ],
+    prefix: Annotated[
+        str | None,
+        Field(
+            description=(
+                "Location-specific prefix shown before the note title. "
+                "Pass null to clear an existing prefix."
+            ),
+            examples=["Archive", None],
+        ),
+    ] = None,
+    note_position: Annotated[
+        int | None,
+        Field(
+            description=(
+                "Position of the note in the parent. Normal ordering is 10, 20, 30"
+            ),
+            examples=[10],
+        ),
+    ] = None,
+    is_expanded: Annotated[
+        bool | None,
+        Field(
+            description="Whether this note appears expanded as a folder in the tree",
+            examples=[False],
+        ),
+    ] = None,
+) -> Branch:
+    payload: dict[str, object | None] = {
+        "prefix": prefix,
+    }
+    if note_position is not None:
+        payload["notePosition"] = note_position
+    if is_expanded is not None:
+        payload["isExpanded"] = is_expanded
+
+    async with get_client() as client:
+        response = await client.patch(
+            f"/etapi/branches/{branch_id}",
             json=payload,
         )
         response.raise_for_status()

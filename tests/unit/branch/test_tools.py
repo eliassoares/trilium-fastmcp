@@ -4,7 +4,7 @@ import httpx
 import pytest
 import respx
 
-from app.branch.tools import create_branch, get_branch
+from app.branch.tools import create_branch, get_branch, update_branch
 from tests.unit.conftest import TRILIUM_URL
 
 
@@ -154,3 +154,107 @@ async def test_get_branch_returns_all_fields(
     assert result.note_position == 10
     assert result.is_expanded is False
     assert result.utc_date_modified is not None
+
+
+@respx.mock
+async def test_update_branch_sends_only_prefix_by_default(
+    branch_response: dict[str, object],
+) -> None:
+    request = respx.patch(f"{TRILIUM_URL}/etapi/branches/branch123").mock(
+        return_value=httpx.Response(200, json=branch_response)
+    )
+
+    await update_branch(branch_id="branch123")
+
+    payload = json.loads(request.calls.last.request.content)
+    assert payload == {"prefix": None}
+
+
+@respx.mock
+async def test_update_branch_sends_explicit_prefix(
+    branch_response: dict[str, object],
+) -> None:
+    request = respx.patch(f"{TRILIUM_URL}/etapi/branches/branch123").mock(
+        return_value=httpx.Response(200, json=branch_response)
+    )
+
+    await update_branch(branch_id="branch123", prefix="Archive")
+
+    payload = json.loads(request.calls.last.request.content)
+    assert payload["prefix"] == "Archive"
+
+
+@respx.mock
+async def test_update_branch_sends_null_prefix_to_clear(
+    branch_response: dict[str, object],
+) -> None:
+    request = respx.patch(f"{TRILIUM_URL}/etapi/branches/branch123").mock(
+        return_value=httpx.Response(200, json=branch_response)
+    )
+
+    await update_branch(branch_id="branch123", prefix=None)
+
+    payload = json.loads(request.calls.last.request.content)
+    assert payload["prefix"] is None
+
+
+@respx.mock
+async def test_update_branch_sends_note_position_and_is_expanded(
+    branch_response: dict[str, object],
+) -> None:
+    request = respx.patch(f"{TRILIUM_URL}/etapi/branches/branch123").mock(
+        return_value=httpx.Response(200, json=branch_response)
+    )
+
+    await update_branch(
+        branch_id="branch123",
+        note_position=30,
+        is_expanded=True,
+    )
+
+    payload = json.loads(request.calls.last.request.content)
+    assert payload["notePosition"] == 30
+    assert payload["isExpanded"] is True
+    assert "note_position" not in payload
+
+
+@respx.mock
+async def test_update_branch_omits_none_optional_fields(
+    branch_response: dict[str, object],
+) -> None:
+    request = respx.patch(f"{TRILIUM_URL}/etapi/branches/branch123").mock(
+        return_value=httpx.Response(200, json=branch_response)
+    )
+
+    await update_branch(branch_id="branch123", prefix="X")
+
+    payload = json.loads(request.calls.last.request.content)
+    assert "notePosition" not in payload
+    assert "isExpanded" not in payload
+
+
+@respx.mock
+async def test_update_branch_returns_branch(
+    branch_response: dict[str, object],
+) -> None:
+    respx.patch(f"{TRILIUM_URL}/etapi/branches/branch123").mock(
+        return_value=httpx.Response(200, json=branch_response)
+    )
+
+    result = await update_branch(branch_id="branch123", prefix="Archive")
+
+    assert result.branch_id == "branch123"
+    assert result.note_id == "evnnmvHTCgIn"
+    assert result.parent_note_id == "parent123"
+    assert result.note_position == 10
+    assert result.is_expanded is False
+
+
+@respx.mock
+async def test_update_branch_raises_on_not_found() -> None:
+    respx.patch(f"{TRILIUM_URL}/etapi/branches/missing").mock(
+        return_value=httpx.Response(404)
+    )
+
+    with pytest.raises(httpx.HTTPStatusError):
+        await update_branch(branch_id="missing")

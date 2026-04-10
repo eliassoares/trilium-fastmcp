@@ -371,7 +371,7 @@ async def create_note(
             description=(
                 "Branch ID. DON'T specify unless you want to force a specific branchId"
             ),
-            examples=["evnnmvHTCgIn"],
+            examples=["BiLlVTUX4Fzk_KMa5HXFDUW3J"],
             pattern="[a-zA-Z0-9_]{4,32}",
         ),
     ] = None,
