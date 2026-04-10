@@ -7,6 +7,8 @@ import respx
 from app.attachment.tools import (
     create_attachment,
     get_attachment,
+    get_attachment_content,
+    update_attachment_content,
     update_attachment_metadata,
 )
 from tests.unit.conftest import TRILIUM_URL
@@ -72,6 +74,18 @@ async def test_get_attachment_returns_attachment(
 
 
 @respx.mock
+async def test_get_attachment_content_returns_raw_bytes() -> None:
+    route = respx.get(f"{TRILIUM_URL}/etapi/attachments/att1234/content").mock(
+        return_value=httpx.Response(200, content=b"\x89PNG\r\n\x1a\nbinary")
+    )
+
+    result = await get_attachment_content(attachment_id="att1234")
+
+    assert route.called
+    assert result == b"\x89PNG\r\n\x1a\nbinary"
+
+
+@respx.mock
 async def test_create_attachment_includes_optional_position_when_provided(
     attachment_response: dict[str, object],
 ) -> None:
@@ -107,6 +121,21 @@ async def test_update_attachment_metadata_omits_none_fields(
 
     payload = json.loads(request.calls.last.request.content)
     assert payload == {"title": "renamed.txt"}
+
+
+@respx.mock
+async def test_update_attachment_content_sends_plain_text_body() -> None:
+    request = respx.put(f"{TRILIUM_URL}/etapi/attachments/att1234/content").mock(
+        return_value=httpx.Response(204)
+    )
+
+    await update_attachment_content(
+        attachment_id="att1234",
+        attachment_content="<p>updated</p>",
+    )
+
+    assert request.calls.last.request.content == b"<p>updated</p>"
+    assert request.calls.last.request.headers["content-type"] == "text/plain"
 
 
 async def test_update_attachment_metadata_requires_one_field() -> None:

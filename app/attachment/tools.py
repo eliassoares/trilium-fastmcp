@@ -183,6 +183,40 @@ async def update_attachment_metadata(
 
 
 @mcp.tool(
+    name="update_attachment_content",
+    description="Updates attachment content identified by its ID",
+    annotations=ToolAnnotations(readOnlyHint=False),
+    tags={"update"},
+)
+async def update_attachment_content(
+    attachment_id: Annotated[
+        str,
+        Field(
+            ...,
+            description="An attachment id to retrieve the attachment",
+            examples=["evnnmvHTCgIn"],
+            pattern="[a-zA-Z0-9_]{4,32}",
+        ),
+    ],
+    attachment_content: Annotated[
+        str,
+        Field(
+            ...,
+            description="The attachment content",
+            examples=["{'data': 8888}"],
+        ),
+    ],
+) -> None:
+    async with get_client() as client:
+        response = await client.put(
+            f"/etapi/attachments/{attachment_id}/content",
+            content=attachment_content.encode(),
+            headers={"content-type": "text/plain"},
+        )
+        response.raise_for_status()
+
+
+@mcp.tool(
     name="get_attachment",
     description="Returns an attachment identified by its ID",
     annotations=ToolAnnotations(readOnlyHint=True),
@@ -205,3 +239,28 @@ async def get_attachment(
         response.raise_for_status()
 
         return Attachment.model_validate(response.json())
+
+
+@mcp.tool(
+    name="get_attachment_content",
+    description="Returns attachment content identified by its ID",
+    annotations=ToolAnnotations(readOnlyHint=True),
+)
+async def get_attachment_content(
+    attachment_id: Annotated[
+        str,
+        Field(
+            ...,
+            description="An attachment id to retrieve the attachment",
+            examples=["evnnmvHTCgIn"],
+            pattern="[a-zA-Z0-9_]{4,32}",
+        ),
+    ],
+) -> bytes:
+    async with get_client() as client:
+        response = await client.get(
+            f"/etapi/attachments/{attachment_id}/content",
+        )
+        response.raise_for_status()
+
+        return response.content
