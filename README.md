@@ -31,7 +31,7 @@ This project exposes Trilium's [ETAPI](https://docs.triliumnotes.org/user-guide/
 - [x] `GET /etapi/branches/:branchId` — get branch by ID
 - [x] `POST /etapi/branches` — create a branch
 - [x] `PATCH /etapi/branches/:branchId` — update a branch
-- [ ] `DELETE /etapi/branches/:branchId` — delete a branch
+- [x] `DELETE /etapi/branches/:branchId` — delete a branch
 - [x] `POST /etapi/refresh-note-ordering/:parentNoteId` — refresh child note ordering
 
 ### Attributes

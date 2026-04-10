@@ -195,3 +195,31 @@ async def refresh_note_order(
     async with get_client() as client:
         response = await client.post(f"/etapi/refresh-note-ordering/{parent_note_id}")
         response.raise_for_status()
+
+
+@mcp.tool(
+    name="delete_branch",
+    description=(
+        "Deletes a branch based on the branchId supplied. "
+        "If this is the last branch of the (child) note, "
+        "then the note is deleted as well."
+    ),
+    annotations=ToolAnnotations(destructiveHint=True),
+    tags={"delete"},
+)
+async def delete_branch(
+    branch_id: Annotated[
+        str,
+        Field(
+            ...,
+            description="Identifies the branch",
+            examples=["BiLlVTUX4Fzk_KMa5HXFDUW3J"],
+            pattern="[a-zA-Z0-9_]{4,32}",
+        ),
+    ],
+) -> None:
+    async with get_client() as client:
+        response = await client.delete(
+            f"/etapi/branches/{branch_id}",
+        )
+        response.raise_for_status()

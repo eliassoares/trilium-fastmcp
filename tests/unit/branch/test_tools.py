@@ -6,6 +6,7 @@ import respx
 
 from app.branch.tools import (
     create_branch,
+    delete_branch,
     get_branch,
     refresh_note_order,
     update_branch,
@@ -284,3 +285,24 @@ async def test_refresh_note_order_raises_on_error() -> None:
 
     with pytest.raises(httpx.HTTPStatusError):
         await refresh_note_order(parent_note_id="parent123")
+
+
+@respx.mock
+async def test_delete_branch_calls_correct_endpoint() -> None:
+    request = respx.delete(f"{TRILIUM_URL}/etapi/branches/branch123").mock(
+        return_value=httpx.Response(204)
+    )
+
+    await delete_branch(branch_id="branch123")
+
+    assert request.called
+
+
+@respx.mock
+async def test_delete_branch_raises_on_not_found() -> None:
+    respx.delete(f"{TRILIUM_URL}/etapi/branches/missing").mock(
+        return_value=httpx.Response(404)
+    )
+
+    with pytest.raises(httpx.HTTPStatusError):
+        await delete_branch(branch_id="missing")
