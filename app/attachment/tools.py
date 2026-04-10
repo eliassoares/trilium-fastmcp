@@ -4,7 +4,7 @@ from mcp.types import ToolAnnotations
 from pydantic import Field
 
 from app import mcp
-from app.attachment.schemas import Attachment, CreateAttachment
+from app.attachment.schemas import Attachment, CreateAttachment, UpdateAttachment
 from app.client import get_client
 
 _TEXT_ATTACHMENT_MIME_EXACT = {
@@ -107,6 +107,78 @@ async def create_attachment(
             ).model_dump(by_alias=True, exclude_none=True, mode="json"),
         )
         response.raise_for_status()
+        return Attachment.model_validate(response.json())
+
+
+@mcp.tool(
+    name="update_attachment_metadata",
+    description=(
+        "Patch an attachment identified by the attachmentId with changes in the body. "
+        "Only role, mime, title, and position are patchable"
+    ),
+    annotations=ToolAnnotations(readOnlyHint=False),
+    tags={"update"},
+)
+async def update_attachment_metadata(
+    attachment_id: Annotated[
+        str,
+        Field(
+            ...,
+            description="An attachment id to retrieve the attachment",
+            examples=["evnnmvHTCgIn"],
+            pattern="[a-zA-Z0-9_]{4,32}",
+        ),
+    ],
+    role: Annotated[
+        str | None,
+        Field(
+            description=(
+                "Purpose of the attachment within its owner. "
+                "Known values: 'image' (embedded image in a text note), "
+                "'file' (generic file attachment)."
+            ),
+            examples=["image", "file"],
+        ),
+    ] = None,
+    mime: Annotated[
+        str | None,
+        Field(
+            description="MIME type of the attachment content",
+            examples=["image/png", "application/pdf", "text/javascript"],
+        ),
+    ] = None,
+    title: Annotated[
+        str | None,
+        Field(
+            description="Display name of the attachment",
+            examples=["screenshot.png", "report.pdf"],
+        ),
+    ] = None,
+    position: Annotated[
+        int | None,
+        Field(
+            description=(
+                "Ordering hint when a note has multiple attachments. "
+                "Lower values sort first."
+            ),
+            examples=[10],
+        ),
+    ] = None,
+) -> Attachment:
+    if all(value is None for value in (role, mime, title, position)):
+        raise ValueError(
+            "update_attachment_metadata requires at least one field to update."
+        )
+
+    async with get_client() as client:
+        response = await client.patch(
+            f"/etapi/attachments/{attachment_id}",
+            json=UpdateAttachment(
+                role=role, mime=mime, title=title, position=position
+            ).model_dump(by_alias=True, exclude_none=True, mode="json"),
+        )
+        response.raise_for_status()
+
         return Attachment.model_validate(response.json())
 
 

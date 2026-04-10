@@ -4,7 +4,11 @@ import httpx
 import pytest
 import respx
 
-from app.attachment.tools import create_attachment, get_attachment
+from app.attachment.tools import (
+    create_attachment,
+    get_attachment,
+    update_attachment_metadata,
+)
 from tests.unit.conftest import TRILIUM_URL
 
 
@@ -86,6 +90,28 @@ async def test_create_attachment_includes_optional_position_when_provided(
 
     payload = json.loads(request.calls.last.request.content)
     assert payload["position"] == 10
+
+
+@respx.mock
+async def test_update_attachment_metadata_omits_none_fields(
+    attachment_response: dict[str, object],
+) -> None:
+    request = respx.patch(f"{TRILIUM_URL}/etapi/attachments/att1234").mock(
+        return_value=httpx.Response(200, json=attachment_response)
+    )
+
+    await update_attachment_metadata(
+        attachment_id="att1234",
+        title="renamed.txt",
+    )
+
+    payload = json.loads(request.calls.last.request.content)
+    assert payload == {"title": "renamed.txt"}
+
+
+async def test_update_attachment_metadata_requires_one_field() -> None:
+    with pytest.raises(ValueError, match="requires at least one field"):
+        await update_attachment_metadata(attachment_id="att1234")
 
 
 async def test_create_attachment_rejects_binary_mime_types() -> None:

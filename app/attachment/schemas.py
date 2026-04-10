@@ -123,3 +123,35 @@ class CreateAttachment(BaseModel):
         ),
         examples=[10],
     )
+
+
+class UpdateAttachment(BaseModel):
+    model_config = ConfigDict(populate_by_name=True, alias_generator=to_camel)
+
+    role: str | None = Field(
+        default=None,
+        description=(
+            "Purpose of the attachment within its owner. "
+            "Known values: 'image' (embedded image in a text note), "
+            "'file' (generic file attachment)."
+        ),
+        examples=["image", "file"],
+    )
+    mime: str | None = Field(
+        default=None,
+        description="MIME type of the attachment content",
+        examples=["image/png", "application/pdf", "text/javascript"],
+    )
+    title: str | None = Field(
+        default=None,
+        description="Display name of the attachment",
+        examples=["screenshot.png", "report.pdf"],
+    )
+    position: int | None = Field(
+        default=None,
+        description=(
+            "Ordering hint when a note has multiple attachments. "
+            "Lower values sort first."
+        ),
+        examples=[10],
+    )
