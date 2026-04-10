@@ -4,7 +4,7 @@ import httpx
 import pytest
 import respx
 
-from app.attachment.tools import create_attachment
+from app.attachment.tools import create_attachment, get_attachment
 from tests.unit.conftest import TRILIUM_URL
 
 
@@ -50,6 +50,21 @@ async def test_create_attachment_serializes_payload_in_camel_case(
         "content": "hello world",
     }
     assert result.attachment_id == "att1234"
+
+
+@respx.mock
+async def test_get_attachment_returns_attachment(
+    attachment_response: dict[str, object],
+) -> None:
+    route = respx.get(f"{TRILIUM_URL}/etapi/attachments/att1234").mock(
+        return_value=httpx.Response(200, json=attachment_response)
+    )
+
+    result = await get_attachment(attachment_id="att1234")
+
+    assert route.called
+    assert result.attachment_id == "att1234"
+    assert result.owner_id == "evnnmvHTCgIn"
 
 
 @respx.mock

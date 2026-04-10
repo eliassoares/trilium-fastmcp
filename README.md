@@ -44,7 +44,7 @@ This project exposes Trilium's [ETAPI](https://docs.triliumnotes.org/user-guide/
 ### Attachments
 
 - [x] `POST /etapi/attachments` — create an attachment
-- [ ] `GET /etapi/attachments/:attachmentId` — get attachment by ID
+- [x] `GET /etapi/attachments/:attachmentId` — get attachment by ID
 - [ ] `PATCH /etapi/attachments/:attachmentId` — update attachment metadata
 - [ ] `GET /etapi/attachments/:attachmentId/content` — get attachment content
 - [ ] `PUT /etapi/attachments/:attachmentId/content` — update attachment content

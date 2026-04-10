@@ -108,3 +108,28 @@ async def create_attachment(
         )
         response.raise_for_status()
         return Attachment.model_validate(response.json())
+
+
+@mcp.tool(
+    name="get_attachment",
+    description="Returns an attachment identified by its ID",
+    annotations=ToolAnnotations(readOnlyHint=True),
+)
+async def get_attachment(
+    attachment_id: Annotated[
+        str,
+        Field(
+            ...,
+            description="An attachment id to retrieve the attachment",
+            examples=["evnnmvHTCgIn"],
+            pattern="[a-zA-Z0-9_]{4,32}",
+        ),
+    ],
+) -> Attachment:
+    async with get_client() as client:
+        response = await client.get(
+            f"/etapi/attachments/{attachment_id}",
+        )
+        response.raise_for_status()
+
+        return Attachment.model_validate(response.json())
