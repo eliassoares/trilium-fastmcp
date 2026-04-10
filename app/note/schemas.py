@@ -4,6 +4,8 @@ from enum import Enum
 from pydantic import BaseModel, ConfigDict, Field
 from pydantic.alias_generators import to_camel
 
+from app.branch.schemas import Branch
+
 
 class NoteOrderBy(Enum):
     title = "title"
@@ -72,15 +74,13 @@ class NoteRecentChange(BaseModel):
     title: str = Field(
         ...,
         description=(
-            "Title at the time of the change "
-            "(may be '[protected]' for protected notes)"
+            "Title at the time of the change (may be '[protected]' for protected notes)"
         ),
     )
     current_title: str = Field(
         ...,
         description=(
-            "Current title of the note "
-            "(may be '[protected]' for protected notes)"
+            "Current title of the note (may be '[protected]' for protected notes)"
         ),
     )
     current_is_deleted: bool | None = Field(
@@ -251,11 +251,7 @@ class Note(BaseModel):
         pattern="[a-zA-Z0-9_]{4,32}",
     )
     title: str = Field(..., description="Note title", examples=["My Note"])
-    type: NoteType = Field(
-        ...,
-        description="Note type",
-        examples=[NoteType.text.value]
-    )
+    type: NoteType = Field(..., description="Note type", examples=[NoteType.text.value])
     mime: str = Field(
         ...,
         description=(
@@ -314,60 +310,11 @@ class Note(BaseModel):
     )
 
 
-class Branch(BaseModel):
-    model_config = ConfigDict(populate_by_name=True, alias_generator=to_camel)
-
-    branch_id: str = Field(
-        ...,
-        description="Unique identifier of the branch",
-        examples=["evnnmvHTCgIn"],
-        pattern="[a-zA-Z0-9_]{4,32}",
-    )
-    note_id: str = Field(
-        ...,
-        description="Identifies the child note",
-        examples=["evnnmvHTCgIn"],
-        pattern="[a-zA-Z0-9_]{4,32}",
-    )
-    parent_note_id: str = Field(
-        ...,
-        description="Identifies the parent note",
-        examples=["evnnmvHTCgIn"],
-        pattern="[a-zA-Z0-9_]{4,32}",
-    )
-    prefix: str | None = Field(
-        default=None,
-        description=(
-            "Location-specific label shown before the note title in the tree. "
-            "Useful to distinguish cloned notes that appear in multiple places."
-        ),
-        examples=[""],
-    )
-    note_position: int = Field(
-        ...,
-        description="Position of the note among its siblings (e.g. 10, 20, 30)",
-        examples=[10],
-    )
-    is_expanded: bool = Field(
-        ...,
-        description="Whether this note appears expanded as a folder in the tree",
-        examples=[False],
-    )
-    utc_date_modified: datetime = Field(
-        ...,
-        description="UTC timestamp of the last modification",
-        examples=[datetime.fromisoformat("2022-03-07T21:54:25.277+00:00")],
-    )
-
-
 class NoteWithBranch(BaseModel):
     model_config = ConfigDict(populate_by_name=True, alias_generator=to_camel)
 
     note: Note = Field(..., description="The created note")
-    branch: Branch = Field(
-        ...,
-        description="The branch placing the note in the tree"
-    )
+    branch: Branch = Field(..., description="The branch placing the note in the tree")
 
 
 class SearchNotesParams(BaseModel):

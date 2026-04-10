@@ -29,7 +29,7 @@ This project exposes Trilium's [ETAPI](https://docs.triliumnotes.org/user-guide/
 ### Branches
 
 - [x] `GET /etapi/branches/:branchId` — get branch by ID
-- [ ] `POST /etapi/branches` — create a branch
+- [x] `POST /etapi/branches` — create a branch
 - [ ] `PATCH /etapi/branches/:branchId` — update a branch
 - [ ] `DELETE /etapi/branches/:branchId` — delete a branch
 - [ ] `POST /etapi/refresh-note-ordering/:parentNoteId` — refresh child note ordering
@@ -84,16 +84,16 @@ The server requires a Trilium ETAPI token. You can obtain one from **Trilium →
 
 Set the following environment variables (or create a `.env` file):
 
-| Variable | Default | Description |
-|---|---|---|
-| `TRILIUM_URL` | — | Base URL of your Trilium instance |
-| `TRILIUM_TOKEN` | — | ETAPI authentication token |
-| `HOST` | `127.0.0.1` | Server bind address |
-| `PORT` | `6969` | Server port |
-| `UPDATING_DISABLED` | `true` | When `true`, disables all write tools at startup |
-| `DELETING_DISABLED` | `true` | When `true`, disables all delete tools at startup |
-| `MCP_AUTH_TOKEN` | — | Optional. Static bearer token to protect the MCP server |
-| `MCP_CLIENT_ID` | — | Optional. Client identifier (required if `MCP_AUTH_TOKEN` is set) |
+| Variable            | Default     | Description                                                       |
+| ------------------- | ----------- | ----------------------------------------------------------------- |
+| `TRILIUM_URL`       | —           | Base URL of your Trilium instance                                 |
+| `TRILIUM_TOKEN`     | —           | ETAPI authentication token                                        |
+| `HOST`              | `127.0.0.1` | Server bind address                                               |
+| `PORT`              | `6969`      | Server port                                                       |
+| `UPDATING_DISABLED` | `true`      | When `true`, disables all write tools at startup                  |
+| `DELETING_DISABLED` | `true`      | When `true`, disables all delete tools at startup                 |
+| `MCP_AUTH_TOKEN`    | —           | Optional. Static bearer token to protect the MCP server           |
+| `MCP_CLIENT_ID`     | —           | Optional. Client identifier (required if `MCP_AUTH_TOKEN` is set) |
 
 ## Running
 
@@ -167,7 +167,7 @@ Because of that, the implementation now follows Trilium's native clipper flow in
 This matches the design of the original Trilium web clipper more closely and is what allows the final note HTML to use Trilium-native image references such as:
 
 ```html
-<img src="api/attachments/<attachmentId>/image/<filename>">
+<img src="api/attachments/<attachmentId>/image/<filename>" />
 ```
 
 These references are recognized by Trilium as real embedded note images, so the created attachments are not marked for automatic erasure.
@@ -265,10 +265,12 @@ Add to `.mcp.json` (project-level) or `~/.claude/settings.json` (global):
     "trilium": {
       "command": "npx",
       "args": [
-        "-y", "mcp-remote",
+        "-y",
+        "mcp-remote",
         "http://<your-server-ip>:6969/mcp",
         "--allow-http",
-        "--header", "Authorization: Bearer <your-mcp-auth-token>"
+        "--header",
+        "Authorization: Bearer <your-mcp-auth-token>"
       ]
     }
   }
@@ -288,7 +290,12 @@ Add to `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS)
   "mcpServers": {
     "trilium": {
       "command": "npx",
-      "args": ["-y", "mcp-remote", "http://<your-server-ip>:6969/mcp", "--allow-http"]
+      "args": [
+        "-y",
+        "mcp-remote",
+        "http://<your-server-ip>:6969/mcp",
+        "--allow-http"
+      ]
     }
   }
 }
@@ -302,10 +309,12 @@ Add to `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS)
     "trilium": {
       "command": "npx",
       "args": [
-        "-y", "mcp-remote",
+        "-y",
+        "mcp-remote",
         "http://<your-server-ip>:6969/mcp",
         "--allow-http",
-        "--header", "Authorization: Bearer <your-mcp-auth-token>"
+        "--header",
+        "Authorization: Bearer <your-mcp-auth-token>"
       ]
     }
   }
