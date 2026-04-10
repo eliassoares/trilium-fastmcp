@@ -169,3 +169,29 @@ async def update_branch(
         response.raise_for_status()
 
         return Branch.model_validate(response.json())
+
+
+@mcp.tool(
+    name="refresh_note_order",
+    description=(
+        "Trigger a re-ordering push for all clients connected to the given parent note."
+        " notePosition changes made via ETAPI are not automatically synced to connected"
+        " clients (e.g. the Trilium web UI). Call this after updating notePosition on"
+        " branches under the same parent to make the new order visible immediately."
+    ),
+    annotations=ToolAnnotations(readOnlyHint=False),
+)
+async def refresh_note_order(
+    parent_note_id: Annotated[
+        str,
+        Field(
+            ...,
+            description="Identifies the parent note",
+            examples=["evnnmvHTCgIn"],
+            pattern="[a-zA-Z0-9_]{4,32}",
+        ),
+    ],
+) -> None:
+    async with get_client() as client:
+        response = await client.post(f"/etapi/refresh-note-ordering/{parent_note_id}")
+        response.raise_for_status()

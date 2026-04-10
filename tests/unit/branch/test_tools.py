@@ -4,7 +4,12 @@ import httpx
 import pytest
 import respx
 
-from app.branch.tools import create_branch, get_branch, update_branch
+from app.branch.tools import (
+    create_branch,
+    get_branch,
+    refresh_note_order,
+    update_branch,
+)
 from tests.unit.conftest import TRILIUM_URL
 
 
@@ -258,3 +263,24 @@ async def test_update_branch_raises_on_not_found() -> None:
 
     with pytest.raises(httpx.HTTPStatusError):
         await update_branch(branch_id="missing")
+
+
+@respx.mock
+async def test_refresh_note_order_calls_correct_endpoint() -> None:
+    request = respx.post(f"{TRILIUM_URL}/etapi/refresh-note-ordering/parent123").mock(
+        return_value=httpx.Response(204)
+    )
+
+    await refresh_note_order(parent_note_id="parent123")
+
+    assert request.called
+
+
+@respx.mock
+async def test_refresh_note_order_raises_on_error() -> None:
+    respx.post(f"{TRILIUM_URL}/etapi/refresh-note-ordering/parent123").mock(
+        return_value=httpx.Response(404)
+    )
+
+    with pytest.raises(httpx.HTTPStatusError):
+        await refresh_note_order(parent_note_id="parent123")
