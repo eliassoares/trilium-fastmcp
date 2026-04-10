@@ -124,7 +124,7 @@ async def update_attachment_metadata(
         str,
         Field(
             ...,
-            description="An attachment id to retrieve the attachment",
+            description="An attachment id to update the attachment metadata",
             examples=["evnnmvHTCgIn"],
             pattern="[a-zA-Z0-9_]{4,32}",
         ),
@@ -193,7 +193,7 @@ async def update_attachment_content(
         str,
         Field(
             ...,
-            description="An attachment id to retrieve the attachment",
+            description="An attachment id to update the attachment content",
             examples=["evnnmvHTCgIn"],
             pattern="[a-zA-Z0-9_]{4,32}",
         ),
@@ -214,6 +214,31 @@ async def update_attachment_content(
             headers={"content-type": "text/plain"},
         )
         response.raise_for_status()
+
+
+@mcp.tool(
+    name="delete_attachment",
+    description="Deletes an attachment based on the attachmentId supplied.",
+    annotations=ToolAnnotations(destructiveHint=True),
+    tags={"delete"},
+)
+async def delete_attachment(
+    attachment_id: Annotated[
+        str,
+        Field(
+            ...,
+            description="An attachment id to delete the attachment",
+            examples=["evnnmvHTCgIn"],
+            pattern="[a-zA-Z0-9_]{4,32}",
+        ),
+    ],
+) -> str:
+    async with get_client() as client:
+        response = await client.delete(
+            f"/etapi/attachments/{attachment_id}",
+        )
+        response.raise_for_status()
+        return "Attachment deleted successfully"
 
 
 @mcp.tool(
@@ -251,7 +276,7 @@ async def get_attachment_content(
         str,
         Field(
             ...,
-            description="An attachment id to retrieve the attachment",
+            description="An attachment id to retrieve the attachment content",
             examples=["evnnmvHTCgIn"],
             pattern="[a-zA-Z0-9_]{4,32}",
         ),

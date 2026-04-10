@@ -48,7 +48,7 @@ This project exposes Trilium's [ETAPI](https://docs.triliumnotes.org/user-guide/
 - [x] `PATCH /etapi/attachments/:attachmentId` — update attachment metadata
 - [x] `GET /etapi/attachments/:attachmentId/content` — get attachment content
 - [x] `PUT /etapi/attachments/:attachmentId/content` — update attachment content
-- [ ] `DELETE /etapi/attachments/:attachmentId` — delete an attachment
+- [x] `DELETE /etapi/attachments/:attachmentId` — delete an attachment
 
 ### Backup
 

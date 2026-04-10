@@ -6,6 +6,7 @@ import respx
 
 from app.attachment.tools import (
     create_attachment,
+    delete_attachment,
     get_attachment,
     get_attachment_content,
     update_attachment_content,
@@ -83,6 +84,18 @@ async def test_get_attachment_content_returns_raw_bytes() -> None:
 
     assert route.called
     assert result == b"\x89PNG\r\n\x1a\nbinary"
+
+
+@respx.mock
+async def test_delete_attachment_returns_success() -> None:
+    route = respx.delete(f"{TRILIUM_URL}/etapi/attachments/att1234").mock(
+        return_value=httpx.Response(204)
+    )
+
+    result = await delete_attachment(attachment_id="att1234")
+
+    assert route.called
+    assert result == "Attachment deleted successfully"
 
 
 @respx.mock
