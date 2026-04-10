@@ -1,6 +1,9 @@
 import logging
+import mimetypes
 from datetime import UTC, datetime
 from typing import Annotated
+from urllib.parse import unquote, urlparse
+from bs4 import BeautifulSoup
 
 import httpx
 from mcp.types import ToolAnnotations
@@ -11,6 +14,7 @@ from app.client import get_client, get_web_client
 from app.clipper.extractor import extract_page
 from app.clipper.schemas import ClipResult
 from app.clipper.security import SSRFError, validate_url_for_fetch
+from app.config import settings
 from app.note.schemas import (
     CreateNoteParams,
     NoteType,
@@ -22,6 +26,7 @@ from app.note.schemas import (
 logger = logging.getLogger(__name__)
 
 _MAX_RESPONSE_SIZE = 10_000_000  # 10 MB
+_MAX_IMAGE_SIZE = 10_000_000  # 10 MB
 _WEB_CLIPPER_NOTE_TITLE = "Web Clipper"
 
 
@@ -62,6 +67,92 @@ async def _resolve_parent_note_id(
     created = NoteWithBranch.model_validate(create_response.json())
     logger.info("Created 'Web Clipper' note: %s", created.note.note_id)
     return created.note.note_id
+
+
+def _guess_attachment_title(url: str, content_type: str) -> str:
+    parsed = urlparse(url)
+    filename = unquote(parsed.path.rsplit("/", 1)[-1]) if parsed.path else ""
+    if filename:
+        return filename
+
+    extension = mimetypes.guess_extension(content_type) or ""
+    return f"image{extension}"
+
+
+async def _localize_note_images(
+    *,
+    note_html: str,
+    note_id: str,
+    client: httpx.AsyncClient,
+    web_client: httpx.AsyncClient,
+) -> tuple[str, list[str]]:
+    soup = BeautifulSoup(note_html, "html.parser")
+    warnings: list[str] = []
+    localized_sources: dict[str, str] = {}
+    position = 10
+
+    for img in soup.find_all("img"):
+        src = img.get("src")
+        if not isinstance(src, str) or not src or src.startswith("data:"):
+            continue
+
+        if src in localized_sources:
+            img["src"] = localized_sources[src]
+        else:
+            try:
+                validate_url_for_fetch(src)
+                response = await web_client.get(src)
+                response.raise_for_status()
+
+                content_type = response.headers.get("content-type", "")
+                mime = content_type.split(";", 1)[0].strip().lower()
+                if not mime.startswith("image/"):
+                    raise ValueError(
+                        f"URL returns non-image content: {content_type}"
+                    )
+                if len(response.content) > _MAX_IMAGE_SIZE:
+                    raise ValueError(
+                        f"Image too large: {len(response.content)} bytes "
+                        f"(max {_MAX_IMAGE_SIZE})"
+                    )
+
+                attachment_response = await client.post(
+                    "/etapi/attachments",
+                    json={
+                        "ownerId": note_id,
+                        "role": "image",
+                        "mime": mime,
+                        "title": _guess_attachment_title(src, mime),
+                        "position": position,
+                    },
+                )
+                attachment_response.raise_for_status()
+                attachment_id = attachment_response.json()["attachmentId"]
+                attachment_content_response = await client.put(
+                    f"/etapi/attachments/{attachment_id}/content",
+                    content=response.content,
+                    headers={"content-type": mime},
+                )
+                attachment_content_response.raise_for_status()
+                local_src = f"api/attachments/{attachment_id}/download"
+                localized_sources[src] = local_src
+                img["src"] = local_src
+                position += 10
+            except Exception as e:
+                warnings.append(f"Failed to localize image '{src}': {e}")
+                continue
+
+        for attr in (
+            "data-src",
+            "data-lazy-src",
+            "data-original",
+            "data-lazy",
+            "srcset",
+            "data-srcset",
+        ):
+            img.attrs.pop(attr, None)
+
+    return str(soup), warnings
 
 
 @mcp.tool(
@@ -116,84 +207,100 @@ async def clip_url(
         response = await web_client.get(url)
         response.raise_for_status()
 
-    content_type = response.headers.get("content-type", "")
-    if "text/html" not in content_type and "application/xhtml" not in content_type:
-        raise ValueError(
-            f"URL returns non-HTML content: {content_type}"
+        content_type = response.headers.get("content-type", "")
+        if "text/html" not in content_type and "application/xhtml" not in content_type:
+            raise ValueError(
+                f"URL returns non-HTML content: {content_type}"
+            )
+
+        if len(response.content) > _MAX_RESPONSE_SIZE:
+            raise ValueError(
+                f"Page too large: {len(response.content)} bytes "
+                f"(max {_MAX_RESPONSE_SIZE})"
+            )
+
+        page = extract_page(response.text, url)
+
+        final_title = title or page.title or url
+
+        note_html = (
+            f'<p><em>Clipped from: <a href="{url}">{url}</a></em></p>'
+            f"{page.content_html}"
         )
 
-    if len(response.content) > _MAX_RESPONSE_SIZE:
-        raise ValueError(
-            f"Page too large: {len(response.content)} bytes "
-            f"(max {_MAX_RESPONSE_SIZE})"
-        )
+        async with get_client() as client:
+            resolved_parent = parent_note_id or await _resolve_parent_note_id(
+                client
+            )
 
-    page = extract_page(response.text, url)
+            params = CreateNoteParams(
+                parent_note_id=resolved_parent,
+                title=final_title,
+                type=NoteType.text,
+                content=note_html,
+            )
 
-    final_title = title or page.title or url
+            create_response = await client.post(
+                "/etapi/create-note",
+                json=params.model_dump(
+                    by_alias=True, exclude_none=True, mode="json"
+                ),
+            )
+            create_response.raise_for_status()
+            created = NoteWithBranch.model_validate(create_response.json())
 
-    note_html = (
-        f'<p><em>Clipped from: <a href="{url}">{url}</a></em></p>'
-        f"{page.content_html}"
-    )
+            note_id = created.note.note_id
+            warnings: list[str] = []
+            labels_created = 0
 
-    async with get_client() as client:
-        resolved_parent = parent_note_id or await _resolve_parent_note_id(
-            client
-        )
+            localized_html, image_warnings = await _localize_note_images(
+                note_html=note_html,
+                note_id=note_id,
+                client=client,
+                web_client=web_client,
+            )
+            warnings.extend(image_warnings)
 
-        params = CreateNoteParams(
-            parent_note_id=resolved_parent,
-            title=final_title,
-            type=NoteType.text,
-            content=note_html,
-        )
-
-        create_response = await client.post(
-            "/etapi/create-note",
-            json=params.model_dump(
-                by_alias=True, exclude_none=True, mode="json"
-            ),
-        )
-        create_response.raise_for_status()
-        created = NoteWithBranch.model_validate(create_response.json())
-
-        note_id = created.note.note_id
-        warnings: list[str] = []
-        labels_created = 0
-
-        labels = [
-            ("clipType", "page", 10),
-            ("pageUrl", url, 20),
-            ("iconClass", "bx bx-globe", 30),
-        ]
-
-        if page.published_time:
-            labels.append(("publishedDate", page.published_time, 40))
-
-        if page.site_name:
-            labels.append(("siteName", page.site_name, 50))
-
-        clip_date = datetime.now(tz=UTC).strftime("%Y-%m-%d")
-        labels.append(("clipDate", clip_date, 60))
-
-        for label_name, label_value, _position in labels:
-            try:
-                await client.post(
-                    "/etapi/attributes",
-                    json={
-                        "noteId": note_id,
-                        "type": "label",
-                        "name": label_name,
-                        "value": label_value,
-                        "isInheritable": False,
-                    },
+            if localized_html != note_html:
+                update_response = await client.put(
+                    f"/etapi/notes/{note_id}/content",
+                    content=localized_html,
+                    headers={"content-type": "text/plain"},
                 )
-                labels_created += 1
-            except Exception as e:
-                warnings.append(
-                    f"Failed to create label '{label_name}': {e}"
-                )
+                update_response.raise_for_status()
+
+            labels = [
+                ("clipType", "page", 10),
+                ("pageUrl", url, 20),
+                ("iconClass", "bx bx-globe", 30),
+            ]
+
+            if page.published_time:
+                labels.append(("publishedDate", page.published_time, 40))
+
+            if page.site_name:
+                labels.append(("siteName", page.site_name, 50))
+
+            clip_date = datetime.now(tz=UTC).strftime("%Y-%m-%d")
+            labels.append(("clipDate", clip_date, 60))
+
+            for label_name, label_value, _position in labels:
+                try:
+                    await client.post(
+                        "/etapi/attributes",
+                        json={
+                            "noteId": note_id,
+                            "type": "label",
+                            "name": label_name,
+                            "value": label_value,
+                            "isInheritable": False,
+                        },
+                    )
+                    labels_created += 1
+                except Exception as e:
+                    warnings.append(
+                        f"Failed to create label '{label_name}': {e}"
+                    )
 
     return ClipResult(
         note_id=note_id,

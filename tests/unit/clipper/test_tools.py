@@ -1,4 +1,5 @@
 from dataclasses import replace
+import json
 
 import httpx
 import pytest
@@ -215,3 +216,117 @@ async def test_clip_url_collects_attribute_creation_warnings(
     assert result.labels_created == 5
     assert len(result.warnings) == 1
     assert "pageUrl" in result.warnings[0]
+
+
+@respx.mock
+async def test_clip_url_localizes_images_as_attachments(
+    monkeypatch: pytest.MonkeyPatch,
+    note_with_branch_response: dict[str, object],
+) -> None:
+    extracted_page = ExtractedPage(
+        title="Extracted Title",
+        description="Summary",
+        content_html=(
+            '<article><img alt="cover" src="https://cdn.example.com/image.png"/></article>'
+        ),
+        canonical_url="https://example.com/article",
+        site_name="Example Site",
+        published_time="2024-01-02T03:04:05Z",
+    )
+    monkeypatch.setattr("app.clipper.tools.validate_url_for_fetch", lambda url: url)
+    monkeypatch.setattr("app.clipper.tools.extract_page", lambda html, url: extracted_page)
+
+    respx.get("https://example.com/article").mock(
+        return_value=httpx.Response(
+            200,
+            text="<html><body>ignored</body></html>",
+            headers={"content-type": "text/html; charset=utf-8"},
+        )
+    )
+    respx.get("https://cdn.example.com/image.png").mock(
+        return_value=httpx.Response(
+            200,
+            content=b"png-bytes",
+            headers={"content-type": "image/png"},
+        )
+    )
+    respx.post(f"{TRILIUM_URL}/etapi/create-note").mock(
+        return_value=httpx.Response(200, json=note_with_branch_response)
+    )
+    attachment_request = respx.post(f"{TRILIUM_URL}/etapi/attachments").mock(
+        return_value=httpx.Response(201, json={"attachmentId": "att123"})
+    )
+    attachment_content_request = respx.put(
+        f"{TRILIUM_URL}/etapi/attachments/att123/content"
+    ).mock(return_value=httpx.Response(204))
+    update_request = respx.put(f"{TRILIUM_URL}/etapi/notes/evnnmvHTCgIn/content").mock(
+        return_value=httpx.Response(204)
+    )
+    respx.post(f"{TRILIUM_URL}/etapi/attributes").mock(
+        return_value=httpx.Response(200)
+    )
+
+    result = await clip_url(
+        url="https://example.com/article",
+        parent_note_id="parent1234",
+    )
+
+    attachment_payload = json.loads(attachment_request.calls.last.request.content)
+    assert attachment_payload["ownerId"] == "evnnmvHTCgIn"
+    assert attachment_payload["role"] == "image"
+    assert attachment_payload["mime"] == "image/png"
+    assert attachment_payload["title"] == "image.png"
+    assert "content" not in attachment_payload
+    assert attachment_content_request.calls.last.request.content == b"png-bytes"
+    assert attachment_content_request.calls.last.request.headers["content-type"] == "image/png"
+
+    updated_html = update_request.calls.last.request.content.decode()
+    assert 'src="api/attachments/att123/download"' in updated_html
+    assert "https://cdn.example.com/image.png" not in updated_html
+    assert result.warnings == []
+
+
+@respx.mock
+async def test_clip_url_warns_and_keeps_note_when_image_localization_fails(
+    monkeypatch: pytest.MonkeyPatch,
+    note_with_branch_response: dict[str, object],
+) -> None:
+    extracted_page = ExtractedPage(
+        title="Extracted Title",
+        description="Summary",
+        content_html='<article><img src="https://cdn.example.com/missing.png"/></article>',
+        canonical_url="https://example.com/article",
+        site_name="Example Site",
+        published_time="2024-01-02T03:04:05Z",
+    )
+    monkeypatch.setattr("app.clipper.tools.validate_url_for_fetch", lambda url: url)
+    monkeypatch.setattr("app.clipper.tools.extract_page", lambda html, url: extracted_page)
+
+    respx.get("https://example.com/article").mock(
+        return_value=httpx.Response(
+            200,
+            text="<html><body>ignored</body></html>",
+            headers={"content-type": "text/html; charset=utf-8"},
+        )
+    )
+    respx.get("https://cdn.example.com/missing.png").mock(
+        return_value=httpx.Response(404)
+    )
+    respx.post(f"{TRILIUM_URL}/etapi/create-note").mock(
+        return_value=httpx.Response(200, json=note_with_branch_response)
+    )
+    update_request = respx.put(f"{TRILIUM_URL}/etapi/notes/evnnmvHTCgIn/content").mock(
+        return_value=httpx.Response(204)
+    )
+    respx.post(f"{TRILIUM_URL}/etapi/attributes").mock(
+        return_value=httpx.Response(200)
+    )
+
+    result = await clip_url(
+        url="https://example.com/article",
+        parent_note_id="parent1234",
+    )
+
+    assert not update_request.called
+    assert len(result.warnings) == 1
+    assert "Failed to localize image" in result.warnings[0]
