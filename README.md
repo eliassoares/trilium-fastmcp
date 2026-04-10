@@ -147,13 +147,81 @@ MCP_CLIENT_ID=<generated-client-id>
 
 ## Web Clipper
 
-The web clipper logic in this project was implemented with AI assistance and was based on the ideas and behavior from [`zadam/trilium-web-clipper`](https://github.com/zadam/trilium-web-clipper).
+The web clipper logic in this project was implemented with AI and was based on the ideas and behavior from [`zadam/trilium-web-clipper`](https://github.com/zadam/trilium-web-clipper).
+
+### Current design
+
+The `clip_url` tool no longer tries to persist clipped images through raw ETAPI attachment uploads. In practice, `POST /etapi/attachments` plus `PUT /etapi/attachments/:attachmentId/content` did not provide a reliable binary upload path for clipped images in Trilium, and produced either corrupted files or server-side `500` errors depending on the payload format.
+
+Because of that, the implementation now follows Trilium's native clipper flow instead of forcing image persistence through ETAPI:
+
+- fetch the page HTML
+- extract the readable article content
+- find `<img>` tags in the extracted HTML
+- download each image with the external web client
+- convert each downloaded image to a `data:` URL
+- replace each image `src` with a temporary clipper image ID
+- send the clip to Trilium through the native clipper endpoint
+- let Trilium create the final note and image attachments internally
+
+This matches the design of the original Trilium web clipper more closely and is what allows the final note HTML to use Trilium-native image references such as:
+
+```html
+<img src="api/attachments/<attachmentId>/image/<filename>">
+```
+
+These references are recognized by Trilium as real embedded note images, so the created attachments are not marked for automatic erasure.
+
+### Why this does not use ETAPI attachments directly
+
+This project is primarily an ETAPI-based MCP wrapper, but web clipping is the main exception.
+
+During implementation and live validation against Trilium:
+
+- `POST /etapi/attachments` with inline base64 created attachments whose content was base64 text, not image bytes
+- `PUT /etapi/attachments/:attachmentId/content` with raw binary returned server errors or corrupted binary content
+- even when the attachment record existed, the note HTML still did not use the native image reference format expected by the Trilium UI
+
+So the final decision was:
+
+- use the native clipper API for note creation with images
+- use ETAPI only for post-processing around note placement and metadata
 
 ### Parent note behavior
 
-When a `parent_note_id` is provided, the clipped page is saved under that note.
+The native Trilium clipper saves notes according to Trilium's own clipper inbox rules. By default this is usually the day note, or another note configured in Trilium with the `clipperInbox` label.
 
-When no `parent_note_id` is provided, the server looks for a note named `Web Clipper` directly under `root`. If it does not exist, the server creates that note automatically and saves the clipped page there.
+This project adds a second step after the native clipper creates the note:
+
+- if `parent_note_id` is provided, the server creates a branch for the clipped note under that parent
+- if the note was initially created under the clipper inbox/day note, the server removes the original branch so the note ends up only under the requested parent
+
+When no `parent_note_id` is provided, the server looks for a note named `Web Clipper` directly under `root`. If it does not exist, the server creates that note automatically, and then moves the clipped note there.
+
+In other words:
+
+- `parent_note_id` provided: clip natively, then move under that note
+- `parent_note_id` omitted: clip natively, then move under `root/Web Clipper`
+
+### Image failure behavior
+
+If an image cannot be downloaded or validated during clipping:
+
+- the clip still succeeds
+- a warning is returned in `ClipResult.warnings`
+- that image keeps its original external URL in the clipped HTML
+
+This means the note is still created even if some images cannot be internalized.
+
+### Labels and metadata
+
+The native clipper payload carries the main clipping metadata, and this project also adds a small ETAPI post-processing step for labels:
+
+- `iconClass = "bx bx-globe"`
+- `siteName`, when available
+- `clipDate`, using the server date
+
+The `publishedDate` label, when available from the extracted page metadata, is sent in the native clipper payload so Trilium can persist it as part of the clipping flow.
 
 ### Use case example
 

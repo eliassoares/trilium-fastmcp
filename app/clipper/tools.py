@@ -1,11 +1,13 @@
+import base64
 import logging
 import mimetypes
+import secrets
 from datetime import UTC, datetime
 from typing import Annotated
 from urllib.parse import unquote, urlparse
-from bs4 import BeautifulSoup
 
 import httpx
+from bs4 import BeautifulSoup
 from mcp.types import ToolAnnotations
 from pydantic import Field
 
@@ -14,9 +16,9 @@ from app.client import get_client, get_web_client
 from app.clipper.extractor import extract_page
 from app.clipper.schemas import ClipResult
 from app.clipper.security import SSRFError, validate_url_for_fetch
-from app.config import settings
 from app.note.schemas import (
     CreateNoteParams,
+    Note,
     NoteType,
     NoteWithBranch,
     SearchNotesParams,
@@ -79,21 +81,44 @@ def _guess_attachment_title(url: str, content_type: str) -> str:
     return f"image{extension}"
 
 
-async def _localize_note_images(
+async def _build_clipper_payload(
     *,
     note_html: str,
-    note_id: str,
-    client: httpx.AsyncClient,
+    title: str,
+    page_url: str,
+    labels: dict[str, str],
     web_client: httpx.AsyncClient,
-) -> tuple[str, list[str]]:
+) -> tuple[dict[str, object], list[str]]:
     soup = BeautifulSoup(note_html, "html.parser")
     warnings: list[str] = []
+    images: list[dict[str, str]] = []
     localized_sources: dict[str, str] = {}
-    position = 10
 
     for img in soup.find_all("img"):
         src = img.get("src")
-        if not isinstance(src, str) or not src or src.startswith("data:"):
+        if not isinstance(src, str) or not src:
+            continue
+
+        for attr in (
+            "data-src",
+            "data-lazy-src",
+            "data-original",
+            "data-lazy",
+            "srcset",
+            "data-srcset",
+        ):
+            img.attrs.pop(attr, None)
+
+        if src.startswith("data:image/"):
+            image_id = f"inline.{src[11:14]}"
+            images.append(
+                {
+                    "imageId": image_id,
+                    "src": image_id,
+                    "dataUrl": src,
+                }
+            )
+            img["src"] = image_id
             continue
 
         if src in localized_sources:
@@ -116,43 +141,96 @@ async def _localize_note_images(
                         f"(max {_MAX_IMAGE_SIZE})"
                     )
 
-                attachment_response = await client.post(
-                    "/etapi/attachments",
-                    json={
-                        "ownerId": note_id,
-                        "role": "image",
-                        "mime": mime,
+                image_id = secrets.token_urlsafe(15)[:20]
+                data_url = (
+                    f"data:{mime};base64,"
+                    f"{base64.b64encode(response.content).decode('ascii')}"
+                )
+                images.append(
+                    {
+                        "imageId": image_id,
+                        "src": src,
+                        "dataUrl": data_url,
                         "title": _guess_attachment_title(src, mime),
-                        "position": position,
-                    },
+                    }
                 )
-                attachment_response.raise_for_status()
-                attachment_id = attachment_response.json()["attachmentId"]
-                attachment_content_response = await client.put(
-                    f"/etapi/attachments/{attachment_id}/content",
-                    content=response.content,
-                    headers={"content-type": mime},
-                )
-                attachment_content_response.raise_for_status()
-                local_src = f"api/attachments/{attachment_id}/download"
-                localized_sources[src] = local_src
-                img["src"] = local_src
-                position += 10
+                localized_sources[src] = image_id
+                img["src"] = image_id
             except Exception as e:
                 warnings.append(f"Failed to localize image '{src}': {e}")
                 continue
 
-        for attr in (
-            "data-src",
-            "data-lazy-src",
-            "data-original",
-            "data-lazy",
-            "srcset",
-            "data-srcset",
-        ):
-            img.attrs.pop(attr, None)
+    payload: dict[str, object] = {
+        "title": title,
+        "content": str(soup),
+        "images": images,
+        "pageUrl": page_url,
+        "clipType": "page",
+        "labels": labels,
+    }
 
-    return str(soup), warnings
+    return payload, warnings
+
+
+async def _get_note(client: httpx.AsyncClient, note_id: str) -> Note:
+    response = await client.get(f"/etapi/notes/{note_id}")
+    response.raise_for_status()
+    return Note.model_validate(response.json())
+
+
+async def _move_clipped_note(
+    *,
+    client: httpx.AsyncClient,
+    note_id: str,
+    resolved_parent: str,
+) -> list[str]:
+    warnings: list[str] = []
+    note = await _get_note(client, note_id)
+
+    if resolved_parent not in note.parent_note_ids:
+        create_response = await client.post(
+            "/etapi/branches",
+            json={
+                "noteId": note_id,
+                "parentNoteId": resolved_parent,
+            },
+        )
+        create_response.raise_for_status()
+        note = await _get_note(client, note_id)
+
+    non_target_branch_ids: list[str] = []
+    for branch_id in note.parent_branch_ids:
+        branch_response = await client.get(f"/etapi/branches/{branch_id}")
+        branch_response.raise_for_status()
+        branch = branch_response.json()
+        if branch["parentNoteId"] != resolved_parent:
+            non_target_branch_ids.append(branch_id)
+
+    if len(non_target_branch_ids) == 1:
+        delete_response = await client.delete(
+            f"/etapi/branches/{non_target_branch_ids[0]}"
+        )
+        delete_response.raise_for_status()
+    elif len(non_target_branch_ids) > 1:
+        warnings.append(
+            "Clipped note has multiple non-target parent branches; "
+            "left the original clipper branch in place."
+        )
+
+    return warnings
+
+
+async def _create_note_via_native_clipper(
+    *,
+    client: httpx.AsyncClient,
+    payload: dict[str, object],
+) -> str:
+    response = await client.post("/api/clipper/notes", json=payload)
+    response.raise_for_status()
+    note_id = response.json().get("noteId")
+    if not isinstance(note_id, str) or not note_id:
+        raise ValueError("Clipper API did not return a noteId")
+    return note_id
 
 
 @mcp.tool(
@@ -227,64 +305,45 @@ async def clip_url(
             f'<p><em>Clipped from: <a href="{url}">{url}</a></em></p>'
             f"{page.content_html}"
         )
+        clipper_labels: dict[str, str] = {}
+        if page.published_time:
+            clipper_labels["publishedDate"] = page.published_time
 
         async with get_client() as client:
             resolved_parent = parent_note_id or await _resolve_parent_note_id(
                 client
             )
-
-            params = CreateNoteParams(
-                parent_note_id=resolved_parent,
-                title=final_title,
-                type=NoteType.text,
-                content=note_html,
-            )
-
-            create_response = await client.post(
-                "/etapi/create-note",
-                json=params.model_dump(
-                    by_alias=True, exclude_none=True, mode="json"
-                ),
-            )
-            create_response.raise_for_status()
-            created = NoteWithBranch.model_validate(create_response.json())
-
-            note_id = created.note.note_id
-            warnings: list[str] = []
-            labels_created = 0
-
-            localized_html, image_warnings = await _localize_note_images(
+            clipper_payload, image_warnings = await _build_clipper_payload(
                 note_html=note_html,
-                note_id=note_id,
-                client=client,
+                title=final_title,
+                page_url=url,
+                labels=clipper_labels,
                 web_client=web_client,
             )
+            warnings: list[str] = []
             warnings.extend(image_warnings)
-
-            if localized_html != note_html:
-                update_response = await client.put(
-                    f"/etapi/notes/{note_id}/content",
-                    content=localized_html,
-                    headers={"content-type": "text/plain"},
+            note_id = await _create_note_via_native_clipper(
+                client=client,
+                payload=clipper_payload,
+            )
+            warnings.extend(
+                await _move_clipped_note(
+                    client=client,
+                    note_id=note_id,
+                    resolved_parent=resolved_parent,
                 )
-                update_response.raise_for_status()
+            )
 
             labels = [
-                ("clipType", "page", 10),
-                ("pageUrl", url, 20),
-                ("iconClass", "bx bx-globe", 30),
+                ("iconClass", "bx bx-globe"),
+                ("siteName", page.site_name),
+                ("clipDate", datetime.now(tz=UTC).strftime("%Y-%m-%d")),
             ]
+            labels_created = 0
 
-            if page.published_time:
-                labels.append(("publishedDate", page.published_time, 40))
-
-            if page.site_name:
-                labels.append(("siteName", page.site_name, 50))
-
-            clip_date = datetime.now(tz=UTC).strftime("%Y-%m-%d")
-            labels.append(("clipDate", clip_date, 60))
-
-            for label_name, label_value, _position in labels:
+            for label_name, label_value in labels:
+                if not label_value:
+                    continue
                 try:
                     await client.post(
                         "/etapi/attributes",

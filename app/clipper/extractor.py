@@ -72,22 +72,30 @@ def _make_links_absolute(tag: Tag, base_url: str) -> None:
         ):
             a["href"] = urljoin(base_url, href)
 
-    _LAZY_SRC_ATTRS = ("data-src", "data-lazy-src", "data-original", "data-lazy")
-    _LAZY_SRCSET_ATTRS = ("data-srcset", "srcset")
+    lazy_src_attrs = (
+        "data-src", "data-lazy-src", "data-original", "data-lazy"
+    )
+    lazy_srcset_attrs = ("data-srcset", "srcset")
     for img in tag.find_all("img"):
         src = img.get("src", "")
         # Resolve lazy-loaded images: prefer lazy attr when src is missing/placeholder
-        if not src or "data:image" in src or src.endswith(("1x1.gif", "1x1.png", "placeholder")):
+        if (
+            not src or "data:image" in src
+            or src.endswith(("1x1.gif", "1x1.png", "placeholder"))
+        ):
             # First try direct src attrs
-            for attr in _LAZY_SRC_ATTRS:
+            for attr in lazy_src_attrs:
                 lazy = img.get(attr, "")
                 if lazy and isinstance(lazy, str):
                     img["src"] = lazy
                     src = lazy
                     break
             # Fall back to srcset attrs — extract URL from first candidate
-            if not src or "data:image" in src or src.endswith(("1x1.gif", "1x1.png", "placeholder")):
-                for attr in _LAZY_SRCSET_ATTRS:
+            if (
+                not src or "data:image" in src
+                or src.endswith(("1x1.gif", "1x1.png", "placeholder"))
+            ):
+                for attr in lazy_srcset_attrs:
                     lazy = img.get(attr, "")
                     if lazy and isinstance(lazy, str):
                         first_candidate = lazy.split(",")[0].strip().split()[0]
