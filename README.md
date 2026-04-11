@@ -56,11 +56,11 @@ This project exposes Trilium's [ETAPI](https://docs.triliumnotes.org/user-guide/
 
 ### Special Notes
 
-- [ ] `GET /etapi/inbox/:date` — get inbox note for a date
-- [ ] `GET /etapi/calendar/days/:date` — get day note
-- [ ] `GET /etapi/calendar/weeks/:week` — get week note
-- [ ] `GET /etapi/calendar/months/:month` — get month note
-- [ ] `GET /etapi/calendar/years/:year` — get year note
+- [x] `GET /etapi/inbox/:date` — get inbox note for a date
+- [x] `GET /etapi/calendar/days/:date` — get day note
+- [x] `GET /etapi/calendar/weeks/:week` — get week note
+- [x] `GET /etapi/calendar/months/:month` — get month note
+- [x] `GET /etapi/calendar/years/:year` — get year note
 
 ### Revisions
 

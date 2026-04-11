@@ -285,6 +285,127 @@ async def get_note_revisions(
 
 
 @mcp.tool(
+    name="get_inbox_note",
+    description=(
+        'Returns an "inbox" note, into which note can be created. '
+        "Date will be used depending on whether the inbox is a fixed "
+        "note (identified with #inbox label) or a day note in a journal."
+    ),
+    annotations=ToolAnnotations(readOnlyHint=True),
+)
+async def get_inbox_note(
+    date: Annotated[
+        str,
+        Field(
+            description="The date to get the note",
+            examples=["2022-02-22"],
+            pattern=r"\d{4}-\d{2}-\d{2}",
+        ),
+    ],
+) -> Note:
+    async with get_client() as client:
+        response = await client.get(f"/etapi/inbox/{date}")
+        response.raise_for_status()
+
+        return Note.model_validate(response.json())
+
+
+@mcp.tool(
+    name="get_day_note",
+    description=("Returns a day note for a given date. Gets created if doesn't exist."),
+    annotations=ToolAnnotations(readOnlyHint=False),
+)
+async def get_day_note(
+    date: Annotated[
+        str,
+        Field(
+            description="The date to get the note",
+            examples=["2022-02-22"],
+            pattern=r"\d{4}-\d{2}-\d{2}",
+        ),
+    ],
+) -> Note:
+    async with get_client() as client:
+        response = await client.get(f"/etapi/calendar/days/{date}")
+        response.raise_for_status()
+
+        return Note.model_validate(response.json())
+
+
+@mcp.tool(
+    name="get_week_note",
+    description=(
+        "Returns a week note for a given ISO week (format YYYY-Www, e.g., 2025-W01). "
+        "The note is created if it doesn't exist."
+    ),
+    annotations=ToolAnnotations(readOnlyHint=False),
+)
+async def get_week_note(
+    date: Annotated[
+        str,
+        Field(
+            description="The week to get the note",
+            examples=["2025-W01"],
+            pattern=r"[0-9]{4}-W[0-9]{2}",
+        ),
+    ],
+) -> Note:
+    async with get_client() as client:
+        response = await client.get(f"/etapi/calendar/weeks/{date}")
+        response.raise_for_status()
+
+        return Note.model_validate(response.json())
+
+
+@mcp.tool(
+    name="get_month_note",
+    description=(
+        "Returns a month note for a given month. Gets created if doesn't exist."
+    ),
+    annotations=ToolAnnotations(readOnlyHint=False),
+)
+async def get_month_note(
+    date: Annotated[
+        str,
+        Field(
+            description="The month to get the note",
+            examples=["2022-02"],
+            pattern=r"[0-9]{4}-[0-9]{2}",
+        ),
+    ],
+) -> Note:
+    async with get_client() as client:
+        response = await client.get(f"/etapi/calendar/months/{date}")
+        response.raise_for_status()
+
+        return Note.model_validate(response.json())
+
+
+@mcp.tool(
+    name="get_year_note",
+    description=(
+        "Returns a year note for a given year. Gets created if doesn't exist."
+    ),
+    annotations=ToolAnnotations(readOnlyHint=False),
+)
+async def get_year_note(
+    date: Annotated[
+        str,
+        Field(
+            description="The year to get the note (format: YYYY)",
+            examples=["2022"],
+            pattern=r"[0-9]{4}",
+        ),
+    ],
+) -> Note:
+    async with get_client() as client:
+        response = await client.get(f"/etapi/calendar/years/{date}")
+        response.raise_for_status()
+
+        return Note.model_validate(response.json())
+
+
+@mcp.tool(
     name="create_note",
     description=("Create a note and place it into the note tree"),
     annotations=ToolAnnotations(readOnlyHint=False),

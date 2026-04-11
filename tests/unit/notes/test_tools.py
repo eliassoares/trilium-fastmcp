@@ -10,8 +10,13 @@ from app.note.tools import (
     create_note_revision,
     delete_note,
     export_note,
+    get_day_note,
+    get_inbox_note,
+    get_month_note,
     get_note,
     get_note_content,
+    get_week_note,
+    get_year_note,
     search_notes,
     undelete_note,
     update_note_content,
@@ -463,3 +468,262 @@ async def test_undelete_note_raises_on_unauthorized() -> None:
 
     with pytest.raises(httpx.HTTPStatusError):
         await undelete_note(note_id="evnnmvHTCgIn")
+
+
+@respx.mock
+async def test_get_inbox_note_returns_note(
+    note_response: dict[str, object],
+) -> None:
+    respx.get(f"{TRILIUM_URL}/etapi/inbox/2022-02-22").mock(
+        return_value=httpx.Response(200, json=note_response)
+    )
+
+    result = await get_inbox_note(date="2022-02-22")
+
+    assert result.note_id == "evnnmvHTCgIn"
+    assert result.title == "My Note"
+
+
+@respx.mock
+async def test_get_inbox_note_sends_get_to_correct_endpoint() -> None:
+    route = respx.get(f"{TRILIUM_URL}/etapi/inbox/2026-04-10").mock(
+        return_value=httpx.Response(
+            200,
+            json={
+                "noteId": "inboxNote1",
+                "title": "Inbox",
+                "type": "text",
+                "mime": "text/html",
+                "isProtected": False,
+                "blobId": "blob123",
+                "attributes": [],
+                "parentNoteIds": [],
+                "childNoteIds": [],
+                "parentBranchIds": [],
+                "childBranchIds": [],
+                "dateCreated": "2026-04-10T00:00:00+00:00",
+                "dateModified": "2026-04-10T00:00:00+00:00",
+                "utcDateCreated": "2026-04-10T00:00:00.000Z",
+                "utcDateModified": "2026-04-10T00:00:00.000Z",
+            },
+        )
+    )
+
+    await get_inbox_note(date="2026-04-10")
+
+    assert route.called
+
+
+@respx.mock
+async def test_get_inbox_note_raises_on_http_error() -> None:
+    respx.get(f"{TRILIUM_URL}/etapi/inbox/2022-02-22").mock(
+        return_value=httpx.Response(500)
+    )
+
+    with pytest.raises(httpx.HTTPStatusError):
+        await get_inbox_note(date="2022-02-22")
+
+
+@respx.mock
+async def test_get_day_note_returns_note(note_response: dict[str, object]) -> None:
+    respx.get(f"{TRILIUM_URL}/etapi/calendar/days/2022-02-22").mock(
+        return_value=httpx.Response(200, json=note_response)
+    )
+
+    result = await get_day_note(date="2022-02-22")
+
+    assert result.note_id == "evnnmvHTCgIn"
+    assert result.title == "My Note"
+
+
+@respx.mock
+async def test_get_day_note_sends_get_to_correct_endpoint() -> None:
+    route = respx.get(f"{TRILIUM_URL}/etapi/calendar/days/2026-04-11").mock(
+        return_value=httpx.Response(
+            200,
+            json={
+                "noteId": "dayNote1",
+                "title": "2026-04-11",
+                "type": "text",
+                "mime": "text/html",
+                "isProtected": False,
+                "blobId": "blob123",
+                "attributes": [],
+                "parentNoteIds": [],
+                "childNoteIds": [],
+                "parentBranchIds": [],
+                "childBranchIds": [],
+                "dateCreated": "2026-04-11T00:00:00+00:00",
+                "dateModified": "2026-04-11T00:00:00+00:00",
+                "utcDateCreated": "2026-04-11T00:00:00.000Z",
+                "utcDateModified": "2026-04-11T00:00:00.000Z",
+            },
+        )
+    )
+
+    await get_day_note(date="2026-04-11")
+
+    assert route.called
+
+
+@respx.mock
+async def test_get_day_note_raises_on_http_error() -> None:
+    respx.get(f"{TRILIUM_URL}/etapi/calendar/days/2022-02-22").mock(
+        return_value=httpx.Response(500)
+    )
+
+    with pytest.raises(httpx.HTTPStatusError):
+        await get_day_note(date="2022-02-22")
+
+
+@respx.mock
+async def test_get_week_note_returns_note(note_response: dict[str, object]) -> None:
+    respx.get(f"{TRILIUM_URL}/etapi/calendar/weeks/2025-W01").mock(
+        return_value=httpx.Response(200, json=note_response)
+    )
+
+    result = await get_week_note(date="2025-W01")
+
+    assert result.note_id == "evnnmvHTCgIn"
+
+
+@respx.mock
+async def test_get_week_note_sends_get_to_correct_endpoint() -> None:
+    route = respx.get(f"{TRILIUM_URL}/etapi/calendar/weeks/2026-W15").mock(
+        return_value=httpx.Response(
+            200,
+            json={
+                "noteId": "weekNote1",
+                "title": "2026-W15",
+                "type": "text",
+                "mime": "text/html",
+                "isProtected": False,
+                "blobId": "blob123",
+                "attributes": [],
+                "parentNoteIds": [],
+                "childNoteIds": [],
+                "parentBranchIds": [],
+                "childBranchIds": [],
+                "dateCreated": "2026-04-11T00:00:00+00:00",
+                "dateModified": "2026-04-11T00:00:00+00:00",
+                "utcDateCreated": "2026-04-11T00:00:00.000Z",
+                "utcDateModified": "2026-04-11T00:00:00.000Z",
+            },
+        )
+    )
+
+    await get_week_note(date="2026-W15")
+
+    assert route.called
+
+
+@respx.mock
+async def test_get_week_note_raises_on_http_error() -> None:
+    respx.get(f"{TRILIUM_URL}/etapi/calendar/weeks/2025-W01").mock(
+        return_value=httpx.Response(500)
+    )
+
+    with pytest.raises(httpx.HTTPStatusError):
+        await get_week_note(date="2025-W01")
+
+
+@respx.mock
+async def test_get_month_note_returns_note(note_response: dict[str, object]) -> None:
+    respx.get(f"{TRILIUM_URL}/etapi/calendar/months/2022-02").mock(
+        return_value=httpx.Response(200, json=note_response)
+    )
+
+    result = await get_month_note(date="2022-02")
+
+    assert result.note_id == "evnnmvHTCgIn"
+
+
+@respx.mock
+async def test_get_month_note_sends_get_to_correct_endpoint() -> None:
+    route = respx.get(f"{TRILIUM_URL}/etapi/calendar/months/2026-04").mock(
+        return_value=httpx.Response(
+            200,
+            json={
+                "noteId": "monthNote1",
+                "title": "2026-04",
+                "type": "text",
+                "mime": "text/html",
+                "isProtected": False,
+                "blobId": "blob123",
+                "attributes": [],
+                "parentNoteIds": [],
+                "childNoteIds": [],
+                "parentBranchIds": [],
+                "childBranchIds": [],
+                "dateCreated": "2026-04-01T00:00:00+00:00",
+                "dateModified": "2026-04-01T00:00:00+00:00",
+                "utcDateCreated": "2026-04-01T00:00:00.000Z",
+                "utcDateModified": "2026-04-01T00:00:00.000Z",
+            },
+        )
+    )
+
+    await get_month_note(date="2026-04")
+
+    assert route.called
+
+
+@respx.mock
+async def test_get_month_note_raises_on_http_error() -> None:
+    respx.get(f"{TRILIUM_URL}/etapi/calendar/months/2022-02").mock(
+        return_value=httpx.Response(500)
+    )
+
+    with pytest.raises(httpx.HTTPStatusError):
+        await get_month_note(date="2022-02")
+
+
+@respx.mock
+async def test_get_year_note_returns_note(note_response: dict[str, object]) -> None:
+    respx.get(f"{TRILIUM_URL}/etapi/calendar/years/2022").mock(
+        return_value=httpx.Response(200, json=note_response)
+    )
+
+    result = await get_year_note(date="2022")
+
+    assert result.note_id == "evnnmvHTCgIn"
+
+
+@respx.mock
+async def test_get_year_note_sends_get_to_correct_endpoint() -> None:
+    route = respx.get(f"{TRILIUM_URL}/etapi/calendar/years/2026").mock(
+        return_value=httpx.Response(
+            200,
+            json={
+                "noteId": "yearNote1",
+                "title": "2026",
+                "type": "text",
+                "mime": "text/html",
+                "isProtected": False,
+                "blobId": "blob123",
+                "attributes": [],
+                "parentNoteIds": [],
+                "childNoteIds": [],
+                "parentBranchIds": [],
+                "childBranchIds": [],
+                "dateCreated": "2026-01-01T00:00:00+00:00",
+                "dateModified": "2026-01-01T00:00:00+00:00",
+                "utcDateCreated": "2026-01-01T00:00:00.000Z",
+                "utcDateModified": "2026-01-01T00:00:00.000Z",
+            },
+        )
+    )
+
+    await get_year_note(date="2026")
+
+    assert route.called
+
+
+@respx.mock
+async def test_get_year_note_raises_on_http_error() -> None:
+    respx.get(f"{TRILIUM_URL}/etapi/calendar/years/2022").mock(
+        return_value=httpx.Response(500)
+    )
+
+    with pytest.raises(httpx.HTTPStatusError):
+        await get_year_note(date="2022")
