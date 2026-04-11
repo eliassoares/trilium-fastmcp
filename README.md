@@ -1,71 +1,96 @@
 # trilium-fastmcp
 
-An [MCP (Model Context Protocol)](https://modelcontextprotocol.io/) server for [Trilium Notes](https://github.com/TriliumNext/Trilium), built with [FastMCP](https://github.com/PrefectHQ/fastmcp).
+[![CI](https://github.com/eliassoares/trilium-fastmcp/actions/workflows/ci.yml/badge.svg)](https://github.com/eliassoares/trilium-fastmcp/actions/workflows/ci.yml)
+[![License: AGPL v3](https://img.shields.io/badge/License-AGPL_v3-blue.svg)](https://www.gnu.org/licenses/agpl-3.0)
+[![Python 3.13+](https://img.shields.io/badge/python-3.13+-blue.svg)](https://www.python.org/downloads/)
+
+[Trilium Notes](https://github.com/TriliumNext/Trilium) is a hierarchical note-taking application focused on building large personal knowledge bases. Notes are organized as a tree (with support for cloning nodes into multiple locations), and the app supports rich text, code blocks, relations between notes, scripting, and a journaling system based on day/week/month/year notes.
+
+An [MCP (Model Context Protocol)](https://modelcontextprotocol.io/) server for Trilium Notes, built with [FastMCP](https://github.com/PrefectHQ/fastmcp).
 
 This project exposes Trilium's [ETAPI](https://docs.triliumnotes.org/user-guide/advanced-usage/etapi/) as MCP tools, enabling LLMs and AI agents to interact with your Trilium instance.
 
-## ETAPI Endpoints TODO
+> Developed and tested against **Trilium `0.102.1-test-260331-111701`**. Other versions may work but are not guaranteed.
 
-### App Info
+## Available Tools
 
-- [x] `GET /etapi/app-info` — get server version and info
+### General
+
+| Tool | Description |
+|------|-------------|
+| `get_application_information` | Returns information about the running Trilium instance |
 
 ### Notes
 
-- [x] `GET /etapi/notes` — search notes
-- [x] `GET /etapi/notes/:noteId` — get note by ID
-- [x] `POST /etapi/create-note` — create a new note
-- [x] `PATCH /etapi/notes/:noteId` — update note metadata
-- [x] `DELETE /etapi/notes/:noteId` — delete a note
-- [x] `GET /etapi/notes/:noteId/content` — get note content
-- [x] `PUT /etapi/notes/:noteId/content` — update note content
-- [x] `GET /etapi/notes/:noteId/export` — export a note
-- [x] `POST /etapi/notes/:noteId/revision` — create a note revision
-- [x] `GET /etapi/notes/:noteId/attachments` — list note attachments
-- [x] `GET /etapi/notes/history` — get note history
-- [x] `GET /etapi/notes/:noteId/revisions` — list note revisions
-- [x] `POST /etapi/notes/:noteId/undelete` — undelete a note
+| Tool | Description |
+|------|-------------|
+| `search_notes` | Search notes using a query string as described in the [Trilium search docs](https://triliumnext.github.io/Docs/Wiki/search.html) |
+| `get_note` | Returns a note identified by its ID |
+| `get_note_content` | Returns note content identified by its ID |
+| `export_note` | Exports a ZIP file of a given note subtree. Use `root` as noteId to export the whole document |
+| `get_note_attachments` | Returns all attachments for a note identified by its ID |
+| `get_note_history` | Returns recent changes including note creations, modifications, and deletions |
+| `get_note_revisions` | Returns all revisions for a note identified by its ID |
+| `get_inbox_note` | Returns the inbox note for a given date. Uses a fixed note (via `#inbox` label) or a journal day note |
+| `get_day_note` | Returns a day note for a given date. Created if it doesn't exist |
+| `get_week_note` | Returns a week note for a given ISO week (format `YYYY-Www`). Created if it doesn't exist |
+| `get_month_note` | Returns a month note for a given month. Created if it doesn't exist |
+| `get_year_note` | Returns a year note for a given year. Created if it doesn't exist |
+| `create_note` | Create a note and place it into the note tree |
+| `update_note_metadata` | Update a note's metadata (title, type, mime, etc.) identified by its ID |
+| `update_note_content` | Updates note content identified by its ID |
+| `create_note_revision` | Create a note revision for the given note |
+| `delete_note` | Deletes a single note based on its ID |
+| `undelete_note` | Restore a deleted note. The note must be deleted and have at least one undeleted parent |
 
 ### Branches
 
-- [x] `GET /etapi/branches/:branchId` — get branch by ID
-- [x] `POST /etapi/branches` — create a branch
-- [x] `PATCH /etapi/branches/:branchId` — update a branch
-- [x] `DELETE /etapi/branches/:branchId` — delete a branch
-- [x] `POST /etapi/refresh-note-ordering/:parentNoteId` — refresh child note ordering
+| Tool | Description |
+|------|-------------|
+| `get_branch` | Returns a branch identified by its ID |
+| `create_branch` | Create a branch (clone a note to a different location in the tree). Updates an existing branch if one already exists between the same parent and child |
+| `update_branch` | Update prefix and notePosition on a branch identified by its ID |
+| `refresh_note_order` | Trigger a re-ordering push to all connected clients for a given parent note. Call this after updating notePosition on branches to make the new order visible immediately |
+| `delete_branch` | Deletes a branch by its ID. If this is the last branch of the child note, the note itself is deleted too |
 
 ### Attributes
 
-- [x] `GET /etapi/attributes/:attributeId` — get attribute by ID
-- [x] `POST /etapi/attributes` — create an attribute
-- [x] `PATCH /etapi/attributes/:attributeId` — update an attribute
-- [x] `DELETE /etapi/attributes/:attributeId` — delete an attribute
+| Tool | Description |
+|------|-------------|
+| `get_attribute` | Returns an attribute identified by its ID |
+| `create_attribute` | Create a label or relation attribute for a note |
+| `update_attribute` | Update an attribute identified by its ID |
+| `delete_attribute` | Delete an attribute identified by its ID |
 
 ### Attachments
 
-- [x] `POST /etapi/attachments` — create an attachment
-- [x] `GET /etapi/attachments/:attachmentId` — get attachment by ID
-- [x] `PATCH /etapi/attachments/:attachmentId` — update attachment metadata
-- [x] `GET /etapi/attachments/:attachmentId/content` — get attachment content
-- [x] `PUT /etapi/attachments/:attachmentId/content` — update attachment content
-- [x] `DELETE /etapi/attachments/:attachmentId` — delete an attachment
+| Tool | Description |
+|------|-------------|
+| `create_attachment` | Create a text-like attachment for a note. Binary attachments are not supported |
+| `get_attachment` | Returns an attachment identified by its ID |
+| `get_attachment_content` | Returns attachment content identified by its ID |
+| `update_attachment_metadata` | Update role, mime, title, or position of an attachment identified by its ID |
+| `update_attachment_content` | Updates attachment content identified by its ID |
+| `delete_attachment` | Deletes an attachment by its ID |
 
 ### Backup
 
-- [x] `PUT /etapi/backup/:backupName` — create a backup
-
-### Special Notes
-
-- [x] `GET /etapi/inbox/:date` — get inbox note for a date
-- [x] `GET /etapi/calendar/days/:date` — get day note
-- [x] `GET /etapi/calendar/weeks/:week` — get week note
-- [x] `GET /etapi/calendar/months/:month` — get month note
-- [x] `GET /etapi/calendar/years/:year` — get year note
+| Tool | Description |
+|------|-------------|
+| `create_backup` | Create a database backup under a given name (e.g. `"now"` → `backup-now.db`) |
 
 ### Revisions
 
-- [x] `GET /etapi/revisions/:revisionId` — get revision by ID
-- [x] `GET /etapi/revisions/:revisionId/content` — get revision content
+| Tool | Description |
+|------|-------------|
+| `get_revision` | Returns a revision identified by its ID |
+| `get_revision_content` | Returns revision content identified by its ID |
+
+### Web Clipper
+
+| Tool | Description |
+|------|-------------|
+| `clip_url` | Clip a web page and save it as a Trilium note. Fetches the URL, extracts readable content, and creates a note with metadata labels. Saved under a `Web Clipper` note in root by default |
 
 ## Setup
 
@@ -147,7 +172,7 @@ MCP_CLIENT_ID=<generated-client-id>
 
 ## Web Clipper
 
-The web clipper logic in this project was implemented with AI and was based on the ideas and behavior from [`zadam/trilium-web-clipper`](https://github.com/zadam/trilium-web-clipper).
+The web clipper logic in this project was implemented using AI and was based on the ideas and behavior from [`zadam/trilium-web-clipper`](https://github.com/zadam/trilium-web-clipper).
 
 ### Current design
 
