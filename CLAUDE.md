@@ -79,7 +79,6 @@ make clean         # Remove caches and build artifacts
 
 ## Known Issues / Workarounds
 
-- `pygments 2.19.2` has CVE-2026-4539 (no fix yet) — ignored via `pip-audit --ignore-vuln CVE-2026-4539`
 - MCP Inspector: use `http://trilium-fastmcp:6969/mcp` as server URL (not `127.0.0.1`)
 - Docker needs `PYTHONPATH=/app` to resolve `app.*` imports when running `python app/main.py`
 - Claude Code ignores `Authorization` headers on HTTP transport ([#7290](https://github.com/anthropics/claude-code/issues/7290)) — use `mcp-remote` as stdio bridge for auth

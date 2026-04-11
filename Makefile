@@ -20,7 +20,7 @@ security: ## Run security scan (bandit)
 	uv run bandit -r . -c pyproject.toml
 
 audit: ## Run dependency vulnerability check
-	uv run pip-audit --ignore-vuln CVE-2026-4539
+	uv run pip-audit
 
 check: lint typecheck security audit test ## Run all checks
 
