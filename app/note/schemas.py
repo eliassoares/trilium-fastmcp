@@ -54,6 +54,11 @@ class NoteType(Enum):
     doc = "doc"
     content_widget = "contentWidget"
     launcher = "launcher"
+    spreadsheet = "spreadsheet"
+    canvas = "canvas"
+    mind_map = "mindMap"
+    geo_map = "geoMap"
+    llm_chat = "llmChat"
 
 
 class NoteExportType(Enum):
