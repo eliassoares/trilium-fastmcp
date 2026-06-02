@@ -1,4 +1,5 @@
 import socket
+from typing import Any
 from unittest.mock import patch
 
 import pytest
@@ -6,7 +7,7 @@ import pytest
 from app.clipper.security import SSRFError, validate_url_for_fetch
 
 
-def _mock_resolve(ip: str):
+def _mock_resolve(ip: str) -> Any:
     return patch("app.clipper.security.socket.gethostbyname", return_value=ip)
 
 
