@@ -26,6 +26,39 @@ def test_note_parses_type_as_enum(note_response: dict[str, object]) -> None:
     assert result.type == NoteType.text
 
 
+@pytest.mark.parametrize(
+    ("api_value", "expected"),
+    [
+        ("text", NoteType.text),
+        ("code", NoteType.code),
+        ("render", NoteType.render),
+        ("file", NoteType.file),
+        ("image", NoteType.image),
+        ("search", NoteType.search),
+        ("relationMap", NoteType.relation_map),
+        ("book", NoteType.book),
+        ("noteMap", NoteType.note_map),
+        ("mermaid", NoteType.mermaid),
+        ("webView", NoteType.web_view),
+        ("shortcut", NoteType.shortcut),
+        ("doc", NoteType.doc),
+        ("contentWidget", NoteType.content_widget),
+        ("launcher", NoteType.launcher),
+        ("spreadsheet", NoteType.spreadsheet),
+        ("canvas", NoteType.canvas),
+        ("mindMap", NoteType.mind_map),
+        ("geoMap", NoteType.geo_map),
+        ("llmChat", NoteType.llm_chat),
+    ],
+)
+def test_note_parses_all_types_as_enum(
+    note_response: dict[str, object], api_value: str, expected: NoteType
+) -> None:
+    payload = {**note_response, "type": api_value}
+    result = Note.model_validate(payload)
+    assert result.type == expected
+
+
 def test_note_parses_dates_as_datetime(note_response: dict[str, object]) -> None:
     result = Note.model_validate(note_response)
     assert isinstance(result.date_created, datetime)
